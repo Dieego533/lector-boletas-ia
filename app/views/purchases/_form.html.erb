@@ -1,0 +1,45 @@
+<% if purchase.errors.any? %>
+  <div>
+    <h2>No se pudo guardar</h2>
+    <ul>
+      <% purchase.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<%= form_with model: purchase do |form| %>
+  <div>
+    <%= form.label :merchant_name, "Comercio" %><br>
+    <%= form.text_field :merchant_name %>
+  </div>
+
+    <div>
+      <%= form.label :merchant_rut, "RUT comercio" %><br>
+      <%= form.text_field :merchant_rut %>
+    </div>
+
+    <div>
+      <%= form.label :document_number, "Número de documento" %><br>
+      <%= form.text_field :document_number %>
+    </div>
+
+    <div>
+      <%= form.label :purchase_date, "Fecha de compra" %><br>
+      <%= form.date_field :purchase_date %>
+    </div>
+
+    <div>
+      <%= form.label :total_amount, "Total" %><br>
+      <%= form.number_field :total_amount, step: 1, min: 0 %>
+    </div>
+
+    <div>
+      <%= form.label :currency, "Moneda" %><br>
+      <%= form.text_field :currency %>
+    </div>
+  <div>
+    <%= form.submit submit_text %>
+  </div>
+<% end %>

@@ -1,0 +1,61 @@
+<h1>Subir boleta</h1>
+
+<% if notice.present? %>
+  <p><%= notice %></p>
+<% end %>
+
+<% if @processing_error.present? %>
+  <p class="notice"><%= @processing_error %></p>
+<% end %>
+
+<p>Sube una boleta en formato PDF, JPG o PNG. El tamaño máximo permitido es 10 MB.</p>
+
+<section class="panel">
+  <h2>Opciones de procesamiento</h2>
+  <table class="purchases-table">
+    <thead>
+      <tr>
+        <th>Opción</th>
+        <th>Descripción</th>
+        <th>Soporta</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Automático (Recomendado)</td>
+        <td>Si el archivo pesa hasta 1 MB usa OCR + una IA pequeña para organizar los datos. Si pesa más, usa análisis visual con IA.</td>
+        <td>PDF / JPG / PNG</td>
+      </tr>
+      <tr>
+        <td>Análisis inteligente</td>
+        <td>Analiza directamente la boleta utilizando IA visual. Ideal para archivos grandes, fotos difíciles o cuando OCR falla.</td>
+        <td>PDF / JPG / PNG</td>
+      </tr>
+      <tr>
+        <td>Extracción de datos</td>
+        <td>Usa OCR.space Engine 3 para leer el texto y luego una IA pequeña para ordenar la información detectada.</td>
+        <td>PDF / JPG / PNG pequeños</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="panel">
+  <%= form_with url: preview_purchases_path, multipart: true, data: { turbo: false } do %>
+    <div>
+      <%= label_tag :receipt, "Archivo de boleta" %><br>
+      <%= file_field_tag :receipt, accept: "application/pdf,image/png,image/jpeg" %>
+      <p>Formatos permitidos: PDF, JPG, PNG. Máximo 10 MB.</p>
+    </div>
+
+    <div>
+      <%= label_tag :ai_engine, "¿Cómo quieres procesar la boleta?" %><br>
+      <%= select_tag :ai_engine, options_for_select(ReceiptProcessor.engine_options, ReceiptProcessor.default_engine) %>
+      <p>Si no sabes cuál elegir, usa Automático. La extracción de datos usa OCR + IA pequeña.</p>
+    </div>
+
+    <%= submit_tag "Procesar boleta" %>
+  <% end %>
+</section>
+
+<p><%= link_to "Volver", purchases_path %></p>

@@ -1,0 +1,71 @@
+<div class="page-header">
+  <div>
+    <h1>Revisa la información antes de guardar</h1>
+    <p>Los campos son editables. La compra sólo se guardará cuando presiones Guardar compra.</p>
+  </div>
+
+  <%= link_to "Cancelar", new_purchase_path %>
+</div>
+
+<div class="preview-layout">
+  <section class="panel receipt-preview">
+    <div class="preview-title">
+      <h2>Boleta original</h2>
+      <% if @preview_file.present? %>
+        <span><%= @preview_file[:filename] %></span>
+      <% end %>
+    </div>
+
+    <% if @preview_file.present? && @preview_file[:content_type].start_with?("image/") %>
+      <img src="<%= @preview_file[:data_url] %>" alt="Boleta original">
+    <% elsif @preview_file.present? && @preview_file[:content_type] == "application/pdf" %>
+      <iframe src="<%= @preview_file[:data_url] %>" title="Boleta original"></iframe>
+    <% else %>
+      <p>No se muestra vista previa para archivos mayores a 3 MB. Los datos procesados se pueden revisar a la derecha.</p>
+    <% end %>
+  </section>
+
+  <section class="panel">
+    <% if notice.present? %>
+      <p class="notice"><%= notice %></p>
+    <% end %>
+
+    <%= form_with model: @purchase, url: purchases_path do |form| %>
+      <%= form.hidden_field :raw_text, value: @raw_text %>
+      <%= form.hidden_field :processing_error, value: @processing_error %>
+      <%= form.hidden_field :ai_response, value: JSON.generate(@ai_response || {}) %>
+
+      <div>
+        <%= form.label :merchant_name, "Comercio" %><br>
+        <%= form.text_field :merchant_name %>
+      </div>
+
+      <div>
+        <%= form.label :merchant_rut, "RUT comercio" %><br>
+        <%= form.text_field :merchant_rut %>
+      </div>
+
+      <div>
+        <%= form.label :document_number, "Número de documento" %><br>
+        <%= form.text_field :document_number %>
+      </div>
+
+      <div>
+        <%= form.label :purchase_date, "Fecha de compra" %><br>
+        <%= form.date_field :purchase_date %>
+      </div>
+
+      <div>
+        <%= form.label :total_amount, "Total" %><br>
+        <%= form.number_field :total_amount, step: 1, min: 0 %>
+      </div>
+
+      <div>
+        <%= form.label :currency, "Moneda" %><br>
+        <%= form.text_field :currency %>
+      </div>
+
+      <%= form.submit "Guardar compra" %>
+    <% end %>
+  </section>
+</div>
