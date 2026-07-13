@@ -1,0 +1,15 @@
+<h1>Revisar compra</h1>
+
+<% if notice.present? %>
+  <p><%= notice %></p>
+<% end %>
+
+<% if @purchase.processing_error.present? %>
+  <p>No se pudo procesar la boleta automaticamente: <%= @purchase.processing_error %></p>
+<% end %>
+
+<p>Corrige los datos guardados.</p>
+
+<%= render "form", purchase: @purchase, submit_text: "Guardar compra" %>
+
+<p><%= link_to "Volver", purchases_path %></p>

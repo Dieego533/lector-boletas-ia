@@ -1,0 +1,77 @@
+<div class="page-header">
+  <div>
+    <h1>Detalle de compra</h1>
+    <p>Información guardada y datos de procesamiento de la boleta.</p>
+  </div>
+
+  <div class="header-actions">
+    <%= link_to "Editar", edit_purchase_path(@purchase), class: "button" %>
+    <%= button_to "Eliminar", purchase_path(@purchase), method: :delete, form: { data: { turbo_confirm: "¿Eliminar esta compra?" } }, class: "button button-danger" %>
+    <%= link_to "Volver", purchases_path %>
+  </div>
+</div>
+
+<% if notice.present? %>
+  <p class="notice"><%= notice %></p>
+<% end %>
+
+<section class="panel">
+  <h2>Datos de la compra</h2>
+
+  <dl class="details-grid">
+    <dt>Comercio</dt>
+    <dd><%= @purchase.merchant_name.presence || "No informado" %></dd>
+
+    <dt>RUT comercio</dt>
+    <dd><%= @purchase.merchant_rut.presence || "No informado" %></dd>
+
+    <dt>Número de documento</dt>
+    <dd><%= @purchase.document_number.presence || "No informado" %></dd>
+
+    <dt>Fecha</dt>
+    <dd><%= @purchase.purchase_date || "No informada" %></dd>
+
+    <dt>Total</dt>
+    <dd><%= @purchase.total_amount.present? ? number_to_currency(@purchase.total_amount, unit: "$", precision: 0) : "No informado" %></dd>
+
+    <dt>Moneda</dt>
+    <dd><%= @purchase.currency %></dd>
+  </dl>
+</section>
+
+<section class="panel">
+  <h2>Procesamiento IA</h2>
+
+  <dl class="details-grid">
+    <dt>Opción seleccionada</dt>
+    <dd><%= @purchase.ai_engine_label.presence || "No registrada" %></dd>
+
+    <dt>Método utilizado</dt>
+    <dd><%= @purchase.resolved_ai_engine_label.presence || "No registrado" %></dd>
+
+    <dt>Modelo usado</dt>
+    <dd><%= @purchase.ai_model.presence || "No registrado" %></dd>
+
+    <dt>Fecha de registro</dt>
+    <dd><%= @purchase.created_at.strftime("%d-%m-%Y %H:%M") %></dd>
+
+    <% if @purchase.processing_error.present? %>
+    <dt>Error de procesamiento</dt>
+    <dd><%= @purchase.processing_error %></dd>
+    <% end %>
+  </dl>
+
+  <% if @purchase.ai_data.present? %>
+    <details>
+      <summary>Ver respuesta IA</summary>
+      <pre><%= JSON.pretty_generate(@purchase.ai_data) %></pre>
+    </details>
+  <% end %>
+
+  <% if @purchase.raw_text.present? %>
+    <details>
+      <summary>Ver texto extraido por OCR</summary>
+      <pre><%= @purchase.raw_text %></pre>
+    </details>
+  <% end %>
+</section>

@@ -1,0 +1,61 @@
+<div class="page-header">
+  <div>
+    <h1>Compras registradas</h1>
+    <p>Consulta las boletas procesadas, revisa sus datos y vuelve a intentar IA si es necesario.</p>
+  </div>
+
+  <%= link_to "Subir boleta", new_purchase_path, class: "button" %>
+</div>
+
+<% if notice.present? %>
+  <p class="notice"><%= notice %></p>
+<% end %>
+
+<section class="panel">
+  <%= form_with url: purchases_path, method: :get, class: "filters" do %>
+    <div>
+      <%= label_tag :query, "Buscar comercio o RUT" %>
+      <%= text_field_tag :query, params[:query], placeholder: "Ej: Jumbo, 76..." %>
+    </div>
+
+    <div class="filters-actions">
+      <%= submit_tag "Filtrar", class: "button" %>
+      <%= link_to "Limpiar", purchases_path %>
+    </div>
+  <% end %>
+</section>
+
+<% if @purchases.any? %>
+  <table class="purchases-table">
+    <thead>
+      <tr>
+        <th>Comercio</th>
+        <th>RUT</th>
+        <th>Fecha</th>
+        <th>Total</th>
+        <th>Modelo IA</th>
+        <th>Creada</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @purchases.each do |purchase| %>
+        <tr>
+          <td><%= purchase.merchant_name.presence || "Sin comercio" %></td>
+          <td><%= purchase.merchant_rut.presence || "Sin RUT" %></td>
+          <td><%= purchase.purchase_date || "Sin fecha" %></td>
+          <td><%= purchase.total_amount.present? ? number_to_currency(purchase.total_amount, unit: "$", precision: 0) : "Sin total" %></td>
+          <td><%= purchase.ai_model.presence || "Sin IA" %></td>
+          <td><%= purchase.created_at.strftime("%d-%m-%Y %H:%M") %></td>
+          <td>
+            <%= link_to "Ver", purchase_path(purchase) %> |
+            <%= link_to "Editar", edit_purchase_path(purchase) %>
+            <%= button_to "Eliminar", purchase_path(purchase), method: :delete, form: { data: { turbo_confirm: "¿Eliminar esta compra?" } }, class: "link-button" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p class="empty-state">No hay compras para los filtros seleccionados.</p>
+<% end %>
