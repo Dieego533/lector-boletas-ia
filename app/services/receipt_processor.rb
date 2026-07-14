@@ -99,9 +99,10 @@ class ReceiptProcessor
   end
 
   def resolved_engine
+    return @resolved_engine if defined?(@resolved_engine)
     return engine unless engine == "auto"
 
-    uploaded_file.size <= 1.megabyte ? "ocr_text" : "vision"
+    nil
   end
 
   def resolved_engine_config
@@ -135,6 +136,8 @@ class ReceiptProcessor
   end
 
   def request_ai
+    return request_auto if engine == "auto"
+
     case provider
     when "gemini"
       request_gemini
@@ -142,6 +145,19 @@ class ReceiptProcessor
       request_ocr_groq
     else
       raise "Proveedor IA no soportado: #{provider}"
+    end
+  end
+
+  def request_auto
+    @raw_text = extract_text_with_ocr_space
+    raise "OCR.space no detecto texto suficiente. Prueba Análisis inteligente." if raw_text.blank? || raw_text.length < 20
+
+    @resolved_engine = complex_receipt_text?(raw_text) ? "vision" : "ocr_text"
+
+    if resolved_engine == "vision"
+      request_gemini
+    else
+      request_groq_with_text(raw_text)
     end
   end
 
@@ -156,19 +172,43 @@ class ReceiptProcessor
   end
 
   def request_ocr_groq
-    @raw_text = extract_text_with_ocr_space
+    @raw_text ||= extract_text_with_ocr_space
     raise "OCR.space no detecto texto suficiente. Prueba Análisis inteligente." if raw_text.blank? || raw_text.length < 20
 
+    request_groq_with_text(raw_text)
+  end
+
+  def request_groq_with_text(text)
     uri = URI(GROQ_ENDPOINT)
     request = Net::HTTP::Post.new(uri)
     request["Authorization"] = "Bearer #{ENV.fetch('GROQ_API_KEY')}"
     request["Content-Type"] = "application/json"
-    request.body = JSON.generate(groq_text_payload(raw_text))
+    request.body = JSON.generate(groq_text_payload(text))
 
     response = perform_request(uri, request)
     raise "Groq respondió HTTP #{response.code}: #{response.body}" unless response.is_a?(Net::HTTPSuccess)
 
     JSON.parse(response.body)
+  end
+
+  def complex_receipt_text?(text)
+    normalized_text = I18n.transliterate(text.to_s).downcase
+    lines = normalized_text.lines.map(&:strip).reject(&:blank?)
+
+    table_terms = [
+      "descto", "dscto", "dcto", "descuento",
+      "p. unitario", "p unitario", "precio unitario",
+      "cantidad", "detalle"
+    ]
+    summary_terms = ["total descto", "total dscto", "monto neto", "monto iva", "monto total", "subtotal"]
+
+    return true if table_terms.count { |term| normalized_text.include?(term) } >= 2
+    return true if summary_terms.any? { |term| normalized_text.include?(term) }
+
+    numeric_heavy_lines = lines.count { |line| line.scan(/\d[\d.,-]*/).size >= 3 }
+    long_code_lines = lines.count { |line| line.match?(/\b\d{8,}\b/) }
+
+    numeric_heavy_lines >= 2 || long_code_lines >= 2
   end
 
   def extract_text_with_ocr_space
