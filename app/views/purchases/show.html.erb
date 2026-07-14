@@ -134,6 +134,11 @@
         <span>Total</span>
         <strong><%= @purchase.total_amount.present? ? number_to_currency(@purchase.total_amount, unit: "$", precision: 0, delimiter: ".", separator: ",") : "No informado" %></strong>
       </div>
+
+      <div class="purchase-data-item">
+        <span>IVA</span>
+        <strong><%= @purchase.tax_amount.present? ? number_to_currency(@purchase.tax_amount, unit: "$", precision: 0, delimiter: ".", separator: ",") : "No informado" %></strong>
+      </div>
     </div>
 
     <div class="product-breakdown">

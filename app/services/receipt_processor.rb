@@ -293,13 +293,14 @@ class ReceiptProcessor
       Extrae los datos principales de esta boleta de compra chilena.
 
       Devuelve exclusivamente JSON valido con estas claves exactas:
-      merchant_name, merchant_rut, document_number, purchase_date, total_amount, items.
+      merchant_name, merchant_rut, document_number, purchase_date, total_amount, tax_amount, items.
 
       Reglas:
       - Si un dato no esta disponible, usa null.
       - No inventes informacion.
       - purchase_date debe venir en formato YYYY-MM-DD.
       - total_amount debe ser un numero, sin puntos de miles ni simbolos.
+      - tax_amount debe ser el monto de IVA si aparece en la boleta. Si no aparece, usa null.
       - items debe ser un arreglo. Si no detectas productos, devuelve [].
       - Cada item debe tener estas claves exactas: description, quantity, unit_price, discount_amount, total_price.
       - description debe ser el nombre del producto o servicio, sin lineas de subtotal ni total.
@@ -353,6 +354,7 @@ class ReceiptProcessor
       document_number: data["document_number"],
       purchase_date: data["purchase_date"],
       total_amount: data["total_amount"],
+      tax_amount: data["tax_amount"],
       currency: "CLP",
       purchase_items_attributes: item_attributes_from(data["items"])
     }.compact

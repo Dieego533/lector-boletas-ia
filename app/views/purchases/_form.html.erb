@@ -37,6 +37,11 @@
       <%= form.label :total_amount, "Total" %>
       <%= form.number_field :total_amount, step: 1, min: 0, placeholder: "0", value: purchase.total_amount.present? ? purchase.total_amount.to_i : purchase.total_amount %>
     </div>
+
+    <div>
+      <%= form.label :tax_amount, "IVA" %>
+      <%= form.number_field :tax_amount, step: 1, min: 0, placeholder: "0", value: purchase.tax_amount.present? ? purchase.tax_amount.to_i : purchase.tax_amount %>
+    </div>
   </div>
 
   <div class="items-review edit-items-review">

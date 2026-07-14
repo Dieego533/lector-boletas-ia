@@ -43,7 +43,7 @@ class PurchasesController < ApplicationController
       return
     end
 
-    @purchase = Purchase.new(result.attributes)
+    @purchase = Purchase.new(purchase_attributes_for_model(result.attributes))
     @raw_text = result.raw_text
     @ai_response = result.ai_response
     @processing_error = result.processing_error
@@ -100,16 +100,25 @@ class PurchasesController < ApplicationController
   end
 
   def purchase_params
-    params.require(:purchase).permit(
+    attributes = params.require(:purchase).permit(
       :merchant_name,
       :merchant_rut,
       :document_number,
       :purchase_date,
       :total_amount,
+      :tax_amount,
       :raw_text,
       :processing_error,
       purchase_items_attributes: %i[id line_type description quantity unit_price discount_amount total_price position _destroy]
     ).merge(currency: "CLP")
+
+    purchase_attributes_for_model(attributes)
+  end
+
+  def purchase_attributes_for_model(attributes)
+    attributes = attributes.to_h
+    attributes.except!("tax_amount", :tax_amount) unless Purchase.column_names.include?("tax_amount")
+    attributes
   end
 
   def ai_engine_param

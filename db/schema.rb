@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_14_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_14_001000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -38,6 +38,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_14_000000) do
     t.text "processing_error"
     t.date "purchase_date"
     t.text "raw_text"
+    t.decimal "tax_amount", precision: 12, scale: 2
     t.decimal "total_amount", precision: 12, scale: 2
     t.datetime "updated_at", null: false
   end
