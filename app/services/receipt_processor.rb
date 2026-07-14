@@ -1,4 +1,5 @@
 require "base64"
+require "bigdecimal"
 require "json"
 require "net/http"
 require "stringio"
@@ -252,13 +253,22 @@ class ReceiptProcessor
       Extrae los datos principales de esta boleta de compra chilena.
 
       Devuelve exclusivamente JSON valido con estas claves exactas:
-      merchant_name, merchant_rut, document_number, purchase_date, total_amount.
+      merchant_name, merchant_rut, document_number, purchase_date, total_amount, items.
 
       Reglas:
       - Si un dato no esta disponible, usa null.
       - No inventes informacion.
       - purchase_date debe venir en formato YYYY-MM-DD.
       - total_amount debe ser un numero, sin puntos de miles ni simbolos.
+      - items debe ser un arreglo. Si no detectas productos, devuelve [].
+      - Cada item debe tener estas claves exactas: description, quantity, unit_price, discount_amount, total_price.
+      - description debe ser el nombre del producto o servicio, sin lineas de subtotal ni total.
+      - quantity debe ser numerica. Si no aparece cantidad, usa 1.
+      - unit_price debe ser el precio original unitario o de linea antes de descuentos, sin puntos de miles ni simbolos.
+      - discount_amount debe ser el descuento aplicado al producto como numero positivo. Si no hay descuento, usa 0.
+      - total_price debe ser el precio final del producto despues del descuento.
+      - Si una linea "*** Descuento" aparece debajo de un producto, asociala al item anterior en discount_amount.
+      - No agregues subtotales, totales, vuelto, forma de pago ni lineas de descuento como productos separados.
       - No agregues claves adicionales.
     PROMPT
   end
@@ -303,8 +313,60 @@ class ReceiptProcessor
       document_number: data["document_number"],
       purchase_date: data["purchase_date"],
       total_amount: data["total_amount"],
-      currency: "CLP"
+      currency: "CLP",
+      purchase_items_attributes: item_attributes_from(data["items"])
     }.compact
+  end
+
+  def item_attributes_from(items)
+    Array(items).filter_map.with_index do |item, index|
+      next unless item.is_a?(Hash)
+
+      description = item["description"].to_s.squish
+      next if description.blank?
+
+      quantity = decimal_or_default(item["quantity"], 1)
+      unit_price = decimal_or_nil(item["unit_price"])
+      discount_amount = decimal_or_default(item["discount_amount"], 0).abs
+      total_price = decimal_or_nil(item["total_price"]) || calculated_total_price(quantity, unit_price, discount_amount)
+
+      {
+        line_type: "product",
+        description: description,
+        quantity: quantity,
+        unit_price: unit_price,
+        discount_amount: discount_amount,
+        total_price: total_price,
+        position: index
+      }
+    end
+  end
+
+  def calculated_total_price(quantity, unit_price, discount_amount)
+    return if unit_price.blank?
+
+    (unit_price * quantity) - discount_amount
+  end
+
+  def decimal_or_default(value, default)
+    decimal_or_nil(value) || default
+  end
+
+  def decimal_or_nil(value)
+    return if value.blank?
+
+    return BigDecimal(value.to_s) if value.is_a?(Numeric)
+
+    normalized_value = value.to_s.strip.gsub(/[^\d,.-]/, "")
+    normalized_value = if normalized_value.include?(",")
+      normalized_value.delete(".").tr(",", ".")
+    else
+      normalized_value.delete(".")
+    end
+
+    BigDecimal(normalized_value)
+  rescue ArgumentError
+    nil
   end
 
   def provider_name

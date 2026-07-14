@@ -1,0 +1,151 @@
+<div class="editable-items-table" data-items-editor data-item-param-prefix="<%= form.object_name %>[purchase_items_attributes]">
+  <div class="editable-items-row header">
+    <span>Descripción</span>
+    <span>Cant.</span>
+    <span>Precio</span>
+    <span>Desc.</span>
+    <span>Total</span>
+    <span></span>
+  </div>
+
+  <div data-items-rows>
+    <%= form.fields_for :purchase_items do |item_form| %>
+      <div class="editable-items-row" data-item-row>
+        <%= item_form.hidden_field :id if item_form.object.persisted? %>
+        <%= item_form.hidden_field :line_type, value: item_form.object.line_type.presence || "product" %>
+        <%= item_form.hidden_field :position, value: item_form.index, data: { item_position: true } %>
+        <%= item_form.hidden_field :_destroy, value: "0", data: { item_destroy: true } %>
+
+        <div>
+          <%= item_form.label :description, "Descripción", class: "sr-only" %>
+          <%= item_form.text_field :description, placeholder: "Producto" %>
+        </div>
+
+        <div>
+          <%= item_form.label :quantity, "Cantidad", class: "sr-only" %>
+          <%= item_form.number_field :quantity, step: 1, min: 0, value: item_form.object.quantity.present? ? item_form.object.quantity.to_i : 1 %>
+        </div>
+
+        <div>
+          <%= item_form.label :unit_price, "Precio", class: "sr-only" %>
+          <%= item_form.number_field :unit_price, step: 1, min: 0, value: item_form.object.unit_price.present? ? item_form.object.unit_price.to_i : nil, placeholder: "0" %>
+        </div>
+
+        <div>
+          <%= item_form.label :discount_amount, "Descuento", class: "sr-only" %>
+          <%= item_form.number_field :discount_amount, step: 1, min: 0, value: item_form.object.discount_amount.present? ? item_form.object.discount_amount.to_i : 0, placeholder: "0" %>
+        </div>
+
+        <div>
+          <%= item_form.label :total_price, "Total", class: "sr-only" %>
+          <%= item_form.number_field :total_price, step: 1, min: 0, value: item_form.object.total_price.present? ? item_form.object.total_price.to_i : nil, placeholder: "0" %>
+        </div>
+
+        <button type="button" class="remove-item-button" data-remove-item aria-label="Quitar producto">
+          <span class="material-symbols-outlined">delete</span>
+        </button>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="editable-items-empty" data-items-empty <%= "hidden" if form.object.purchase_items.any? %>>No hay productos en el desglose. Puedes agregar filas manualmente.</div>
+
+  <template data-item-template>
+    <div class="editable-items-row" data-item-row>
+      <input type="hidden" name="<%= form.object_name %>[purchase_items_attributes][NEW_RECORD][line_type]" value="product">
+      <input type="hidden" name="<%= form.object_name %>[purchase_items_attributes][NEW_RECORD][position]" value="0" data-item-position>
+      <input type="hidden" name="<%= form.object_name %>[purchase_items_attributes][NEW_RECORD][_destroy]" value="0" data-item-destroy>
+
+      <div>
+        <label class="sr-only" for="<%= form.object_name %>_purchase_items_attributes_NEW_RECORD_description">Descripción</label>
+        <input type="text" name="<%= form.object_name %>[purchase_items_attributes][NEW_RECORD][description]" id="<%= form.object_name %>_purchase_items_attributes_NEW_RECORD_description" placeholder="Producto">
+      </div>
+
+      <div>
+        <label class="sr-only" for="<%= form.object_name %>_purchase_items_attributes_NEW_RECORD_quantity">Cantidad</label>
+        <input type="number" name="<%= form.object_name %>[purchase_items_attributes][NEW_RECORD][quantity]" id="<%= form.object_name %>_purchase_items_attributes_NEW_RECORD_quantity" step="1" min="0" value="1">
+      </div>
+
+      <div>
+        <label class="sr-only" for="<%= form.object_name %>_purchase_items_attributes_NEW_RECORD_unit_price">Precio</label>
+        <input type="number" name="<%= form.object_name %>[purchase_items_attributes][NEW_RECORD][unit_price]" id="<%= form.object_name %>_purchase_items_attributes_NEW_RECORD_unit_price" step="1" min="0" placeholder="0">
+      </div>
+
+      <div>
+        <label class="sr-only" for="<%= form.object_name %>_purchase_items_attributes_NEW_RECORD_discount_amount">Descuento</label>
+        <input type="number" name="<%= form.object_name %>[purchase_items_attributes][NEW_RECORD][discount_amount]" id="<%= form.object_name %>_purchase_items_attributes_NEW_RECORD_discount_amount" step="1" min="0" value="0" placeholder="0">
+      </div>
+
+      <div>
+        <label class="sr-only" for="<%= form.object_name %>_purchase_items_attributes_NEW_RECORD_total_price">Total</label>
+        <input type="number" name="<%= form.object_name %>[purchase_items_attributes][NEW_RECORD][total_price]" id="<%= form.object_name %>_purchase_items_attributes_NEW_RECORD_total_price" step="1" min="0" placeholder="0">
+      </div>
+
+      <button type="button" class="remove-item-button" data-remove-item aria-label="Quitar producto">
+        <span class="material-symbols-outlined">delete</span>
+      </button>
+    </div>
+  </template>
+</div>
+
+<script>
+  (() => {
+    window.setupItemsEditor = window.setupItemsEditor || (() => {
+      document.querySelectorAll("[data-items-editor]").forEach((editor) => {
+        if (editor.dataset.itemsEditorReady) return;
+        editor.dataset.itemsEditorReady = "true";
+
+        const rowsContainer = editor.querySelector("[data-items-rows]");
+        const emptyState = editor.querySelector("[data-items-empty]");
+        const template = editor.querySelector("[data-item-template]");
+        const addButton = editor.closest(".items-review")?.querySelector("[data-add-item]");
+
+        const visibleRows = () => Array.from(rowsContainer.querySelectorAll("[data-item-row]")).filter((row) => row.style.display !== "none");
+
+        const refreshState = () => {
+          const rows = visibleRows();
+          rows.forEach((row, index) => {
+            const position = row.querySelector("[data-item-position]");
+            if (position) position.value = index;
+          });
+          if (emptyState) emptyState.hidden = rows.length > 0;
+        };
+
+        const addRow = () => {
+          if (!template) return;
+
+          const index = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+          const html = template.innerHTML.replaceAll("NEW_RECORD", index);
+          rowsContainer.insertAdjacentHTML("beforeend", html);
+          refreshState();
+        };
+
+        addButton?.addEventListener("click", addRow);
+
+        editor.addEventListener("click", (event) => {
+          const button = event.target.closest("[data-remove-item]");
+          if (!button) return;
+
+          const row = button.closest("[data-item-row]");
+          const destroyInput = row?.querySelector("[data-item-destroy]");
+          if (!row) return;
+
+          if (destroyInput && row.querySelector("input[name$='[id]']")) {
+            destroyInput.value = "1";
+            row.style.display = "none";
+          } else {
+            row.remove();
+          }
+
+          refreshState();
+        });
+
+        refreshState();
+      });
+    });
+
+    document.addEventListener("DOMContentLoaded", window.setupItemsEditor);
+    document.addEventListener("turbo:load", window.setupItemsEditor);
+    window.setupItemsEditor();
+  })();
+</script>

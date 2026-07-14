@@ -107,7 +107,8 @@ class PurchasesController < ApplicationController
       :purchase_date,
       :total_amount,
       :raw_text,
-      :processing_error
+      :processing_error,
+      purchase_items_attributes: %i[id line_type description quantity unit_price discount_amount total_price position _destroy]
     ).merge(currency: "CLP")
   end
 

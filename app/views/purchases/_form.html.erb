@@ -39,6 +39,21 @@
     </div>
   </div>
 
+  <div class="items-review edit-items-review">
+    <div class="items-review-header">
+      <div>
+        <span class="material-symbols-outlined">list_alt</span>
+        <h3>Desglose de items</h3>
+      </div>
+      <button type="button" class="add-item-button" data-add-item>
+        <span class="material-symbols-outlined">add</span>
+        Agregar fila
+      </button>
+    </div>
+
+    <%= render "purchases/items_fields", form: form %>
+  </div>
+
   <div class="purchase-edit-actions">
     <%= link_to "Cancelar", local_assigns.fetch(:cancel_path, purchases_path), class: "button button-secondary" %>
     <%= form.submit submit_text, class: "save-review-button" %>

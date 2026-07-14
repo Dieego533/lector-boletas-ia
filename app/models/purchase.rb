@@ -1,4 +1,8 @@
 class Purchase < ApplicationRecord
+  has_many :purchase_items, -> { order(:position, :id) }, dependent: :destroy
+
+  accepts_nested_attributes_for :purchase_items, allow_destroy: true, reject_if: :reject_purchase_item?
+
   scope :recent, -> { order(created_at: :desc) }
   scope :search_by_merchant, lambda { |query|
     next if query.blank?
@@ -28,6 +32,12 @@ class Purchase < ApplicationRecord
       "vision" => "Análisis inteligente",
       "ocr_text" => "Extracción de datos"
     }[engine]
+  end
+
+  private
+
+  def reject_purchase_item?(attributes)
+    ActiveModel::Type::Boolean.new.cast(attributes["_destroy"]) || attributes["description"].blank?
   end
 
 end

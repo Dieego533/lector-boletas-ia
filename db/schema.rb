@@ -10,9 +10,23 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_13_001000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_14_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "purchase_items", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "description", null: false
+    t.decimal "discount_amount", precision: 12, scale: 2, default: "0.0", null: false
+    t.string "line_type", default: "product", null: false
+    t.integer "position", default: 0, null: false
+    t.bigint "purchase_id", null: false
+    t.decimal "quantity", precision: 10, scale: 2, default: "1.0", null: false
+    t.decimal "total_price", precision: 12, scale: 2
+    t.decimal "unit_price", precision: 12, scale: 2
+    t.datetime "updated_at", null: false
+    t.index ["purchase_id"], name: "index_purchase_items_on_purchase_id"
+  end
 
   create_table "purchases", force: :cascade do |t|
     t.jsonb "ai_response"
@@ -27,4 +41,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_13_001000) do
     t.decimal "total_amount", precision: 12, scale: 2
     t.datetime "updated_at", null: false
   end
+
+  add_foreign_key "purchase_items", "purchases"
 end

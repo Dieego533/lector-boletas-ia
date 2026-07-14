@@ -127,7 +127,7 @@
 
       <div class="purchase-data-item">
         <span>Fecha</span>
-        <strong><%= @purchase.purchase_date.presence || "No informada" %></strong>
+        <strong><%= @purchase.purchase_date.present? ? @purchase.purchase_date.strftime("%d-%m-%Y") : "No informada" %></strong>
       </div>
 
       <div class="purchase-data-item total">
@@ -142,24 +142,51 @@
         <h3>Desglose de productos</h3>
       </div>
 
-      <div class="products-list-card">
-        <div class="product-placeholder-item">
-          <div>
-            <span>Cant.</span>
-            <strong>-</strong>
-          </div>
+      <% if @purchase.purchase_items.any? %>
+        <div class="products-table-card">
+          <table class="products-table">
+            <thead>
+              <tr>
+                <th>Cant.</th>
+                <th>Descripción</th>
+                <th class="text-right">Precio</th>
+                <th class="text-right">Desc.</th>
+                <th class="text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @purchase.purchase_items.each do |item| %>
+                <tr>
+                  <td><%= item.quantity.to_i %></td>
+                  <td><%= item.description %></td>
+                  <td class="text-right"><%= item.unit_price.present? ? number_to_currency(item.unit_price, unit: "$", precision: 0, delimiter: ".", separator: ",") : "-" %></td>
+                  <td class="text-right"><%= item.discount_amount.to_i.positive? ? "-#{number_to_currency(item.discount_amount, unit: "$", precision: 0, delimiter: ".", separator: ",")}" : "-" %></td>
+                  <td class="text-right"><%= item.total_price.present? ? number_to_currency(item.total_price, unit: "$", precision: 0, delimiter: ".", separator: ",") : "-" %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% else %>
+        <div class="products-list-card">
+          <div class="product-placeholder-item">
+            <div>
+              <span>Cant.</span>
+              <strong>-</strong>
+            </div>
 
-          <div>
-            <span>Descripción</span>
-            <strong>Los productos individuales aún no se extraen.</strong>
-          </div>
+            <div>
+              <span>Descripción</span>
+              <strong>Los productos individuales aún no se extraen.</strong>
+            </div>
 
-          <div>
-            <span>Precio</span>
-            <strong>-</strong>
+            <div>
+              <span>Precio</span>
+              <strong>-</strong>
+            </div>
           </div>
         </div>
-      </div>
+      <% end %>
     </div>
   </section>
 </div>

@@ -98,21 +98,13 @@
             <span class="material-symbols-outlined">list_alt</span>
             <h3>Desglose de items</h3>
           </div>
-          <small>Próximamente editable</small>
+          <button type="button" class="add-item-button" data-add-item>
+            <span class="material-symbols-outlined">add</span>
+            Agregar fila
+          </button>
         </div>
 
-        <div class="items-placeholder-table">
-          <div class="items-placeholder-row header">
-            <span>Producto</span>
-            <span>Cant.</span>
-            <span>Precio</span>
-          </div>
-          <div class="items-placeholder-row muted">
-            <span>Los productos individuales aún no se extraen.</span>
-            <span>-</span>
-            <span>-</span>
-          </div>
-        </div>
+        <%= render "purchases/items_fields", form: form %>
       </div>
 
       <div class="review-actions">
