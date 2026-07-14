@@ -109,64 +109,94 @@
 </div>
 
 <script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const dropzone = document.querySelector("[data-dropzone]");
-    const input = document.querySelector("[data-file-input]");
-    const label = document.querySelector("[data-file-label]");
-    const paper = document.querySelector(".receipt-paper");
-    const previewTitle = document.querySelector("[data-preview-title]");
-    const previewSubtitle = document.querySelector("[data-preview-subtitle]");
-    const form = document.querySelector("[data-processing-form]");
-    const modal = document.querySelector("[data-loading-modal]");
+  (() => {
+    window.setupUploadForm = window.setupUploadForm || (() => {
+      const dropzone = document.querySelector("[data-dropzone]");
+      const input = document.querySelector("[data-file-input]");
+      const label = document.querySelector("[data-file-label]");
+      const paper = document.querySelector(".receipt-paper");
+      const form = document.querySelector("[data-processing-form]");
+      const modal = document.querySelector("[data-loading-modal]");
 
-    if (!dropzone || !input || !label || !paper) return;
+      if (!dropzone || !input || !label || !paper) return;
+      if (dropzone.dataset.uploadReady) return;
 
-    const setFile = (file) => {
-      if (!file) return;
+      dropzone.dataset.uploadReady = "true";
 
-      label.textContent = file.name;
+      const setFile = (file) => {
+        if (!file) return;
 
-      if (file.type.startsWith("image/")) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          paper.innerHTML = `<img src="${event.target.result}" alt="Vista previa de boleta">`;
-        };
-        reader.readAsDataURL(file);
-        return;
-      }
+        label.textContent = file.name;
 
-      paper.innerHTML = `
-        <span class="material-symbols-outlined">picture_as_pdf</span>
-        <strong>${file.name}</strong>
-        <small>El PDF se procesará al presionar Procesar boleta.</small>
-      `;
-    };
+        if (file.type.startsWith("image/")) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            paper.innerHTML = `<img src="${event.target.result}" alt="Vista previa de boleta">`;
+          };
+          reader.readAsDataURL(file);
+          return;
+        }
 
-    dropzone.addEventListener("dragover", (event) => {
-      event.preventDefault();
-      dropzone.classList.add("is-dragging");
-    });
+        paper.innerHTML = `
+          <span class="material-symbols-outlined">picture_as_pdf</span>
+          <strong>${file.name}</strong>
+          <small>El PDF se procesará al presionar Procesar boleta.</small>
+        `;
+      };
 
-    dropzone.addEventListener("dragleave", () => {
-      dropzone.classList.remove("is-dragging");
-    });
-
-    dropzone.addEventListener("drop", (event) => {
-      event.preventDefault();
-      dropzone.classList.remove("is-dragging");
-
-      if (event.dataTransfer.files.length > 0) {
-        input.files = event.dataTransfer.files;
-        setFile(event.dataTransfer.files[0]);
-      }
-    });
-
-    input.addEventListener("change", () => setFile(input.files[0]));
-
-    if (form && modal) {
-      form.addEventListener("submit", () => {
-        modal.hidden = false;
+      dropzone.addEventListener("dragover", (event) => {
+        event.preventDefault();
+        dropzone.classList.add("is-dragging");
       });
+
+      dropzone.addEventListener("dragleave", () => {
+        dropzone.classList.remove("is-dragging");
+      });
+
+      dropzone.addEventListener("drop", (event) => {
+        event.preventDefault();
+        dropzone.classList.remove("is-dragging");
+
+        if (event.dataTransfer.files.length > 0) {
+          input.files = event.dataTransfer.files;
+          setFile(event.dataTransfer.files[0]);
+        }
+      });
+
+      input.addEventListener("click", () => {
+        input.value = "";
+      });
+
+      input.addEventListener("change", () => setFile(input.files[0]));
+
+      if (form && modal) {
+        form.addEventListener("submit", () => {
+          modal.hidden = false;
+        });
+      }
+    });
+
+    window.resetUploadFormBeforeCache = window.resetUploadFormBeforeCache || (() => {
+      const dropzone = document.querySelector("[data-dropzone]");
+      const input = document.querySelector("[data-file-input]");
+      const modal = document.querySelector("[data-loading-modal]");
+
+      if (dropzone) {
+        dropzone.classList.remove("is-dragging");
+        delete dropzone.dataset.uploadReady;
+      }
+
+      if (input) input.value = "";
+      if (modal) modal.hidden = true;
+    });
+
+    if (!window.uploadFormListenersReady) {
+      document.addEventListener("DOMContentLoaded", window.setupUploadForm);
+      document.addEventListener("turbo:load", window.setupUploadForm);
+      document.addEventListener("turbo:before-cache", window.resetUploadFormBeforeCache);
+      window.uploadFormListenersReady = true;
     }
-  });
+
+    window.setupUploadForm();
+  })();
 </script>
