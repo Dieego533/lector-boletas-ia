@@ -1,61 +1,172 @@
-<h1>Subir boleta</h1>
+<div class="back-row">
+  <%= link_to purchases_path, class: "back-link" do %>
+    <span class="material-symbols-outlined">arrow_back</span>
+    Volver
+  <% end %>
+</div>
+
+<header class="upload-header">
+  <h1>
+    <span class="material-symbols-outlined">receipt_long</span>
+    Subir boleta
+  </h1>
+  <p>Sube una boleta en formato PDF, JPG o PNG. El tamaño máximo permitido es 10 MB.</p>
+</header>
 
 <% if notice.present? %>
-  <p><%= notice %></p>
+  <p class="notice"><%= notice %></p>
 <% end %>
 
 <% if @processing_error.present? %>
   <p class="notice"><%= @processing_error %></p>
 <% end %>
 
-<p>Sube una boleta en formato PDF, JPG o PNG. El tamaño máximo permitido es 10 MB.</p>
+<div class="upload-grid">
+  <section class="upload-card">
+    <%= form_with url: preview_purchases_path, multipart: true, data: { turbo: false, processing_form: true }, class: "upload-form" do %>
+      <div class="upload-card-title">
+        <span class="material-symbols-outlined">cloud_upload</span>
+        <h2>Archivo de boleta</h2>
+      </div>
 
-<section class="panel">
-  <h2>Opciones de procesamiento</h2>
-  <table class="purchases-table">
-    <thead>
-      <tr>
-        <th>Opción</th>
-        <th>Descripción</th>
-        <th>Soporta</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Automático (Recomendado)</td>
-        <td>Si el archivo pesa hasta 1 MB usa OCR + una IA pequeña para organizar los datos. Si pesa más, usa análisis visual con IA.</td>
-        <td>PDF / JPG / PNG</td>
-      </tr>
-      <tr>
-        <td>Análisis inteligente</td>
-        <td>Analiza directamente la boleta utilizando IA visual. Ideal para archivos grandes, fotos difíciles o cuando OCR falla.</td>
-        <td>PDF / JPG / PNG</td>
-      </tr>
-      <tr>
-        <td>Extracción de datos</td>
-        <td>Usa OCR.space Engine 3 para leer el texto y luego una IA pequeña para ordenar la información detectada.</td>
-        <td>PDF / JPG / PNG pequeños</td>
-      </tr>
-    </tbody>
-  </table>
-</section>
+      <label class="dropzone" for="receipt-input" data-dropzone>
+        <span class="material-symbols-outlined dropzone-icon">upload_file</span>
+        <strong data-file-label>Haga clic o arrastre su boleta aquí</strong>
+      </label>
+      <%= file_field_tag :receipt, id: "receipt-input", accept: "application/pdf,image/png,image/jpeg", class: "file-input", data: { file_input: true } %>
 
-<section class="panel">
-  <%= form_with url: preview_purchases_path, multipart: true, data: { turbo: false } do %>
-    <div>
-      <%= label_tag :receipt, "Archivo de boleta" %><br>
-      <%= file_field_tag :receipt, accept: "application/pdf,image/png,image/jpeg" %>
-      <p>Formatos permitidos: PDF, JPG, PNG. Máximo 10 MB.</p>
+      <div class="processing-methods">
+        <label>Método de procesamiento</label>
+
+        <div class="method-options">
+          <label class="method-option">
+            <%= radio_button_tag :ai_engine, "auto", ReceiptProcessor.default_engine == "auto" %>
+            <span>
+              <strong>⭐ Automático</strong>
+              <small>El sistema decide cuál es el mejor método para procesar tu boleta.</small>
+            </span>
+          </label>
+
+          <label class="method-option">
+            <%= radio_button_tag :ai_engine, "vision", ReceiptProcessor.default_engine == "vision" %>
+            <span>
+              <strong>Análisis inteligente</strong>
+              <small>Ideal para archivos grandes, fotos difíciles o documentos con mala iluminación.</small>
+            </span>
+          </label>
+
+          <label class="method-option">
+            <%= radio_button_tag :ai_engine, "ocr_text", ReceiptProcessor.default_engine == "ocr_text" %>
+            <span>
+              <strong>Extracción de datos</strong>
+              <small>Rápido para fotos claras o archivos con buen detalle.</small>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <%= button_tag type: :submit, class: "process-button" do %>
+        <span class="material-symbols-outlined">bolt</span>
+        Procesar boleta
+      <% end %>
+    <% end %>
+  </section>
+
+  <section class="preview-card">
+    <div class="preview-card-header">
+      <div>
+        <span class="material-symbols-outlined">visibility</span>
+        <h2>Vista previa</h2>
+      </div>
+
     </div>
 
-    <div>
-      <%= label_tag :ai_engine, "¿Cómo quieres procesar la boleta?" %><br>
-      <%= select_tag :ai_engine, options_for_select(ReceiptProcessor.engine_options, ReceiptProcessor.default_engine) %>
-      <p>Si no sabes cuál elegir, usa Automático. La extracción de datos usa OCR + IA pequeña.</p>
+    <div class="preview-stage">
+      <div class="receipt-placeholder">
+        <div class="receipt-paper">
+          <span class="material-symbols-outlined">receipt_long</span>
+          <strong data-preview-title>Vista previa de boleta</strong>
+          <small data-preview-subtitle>Selecciona un archivo para procesarlo.</small>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="loading-modal" data-loading-modal hidden>
+  <div class="loading-modal-card">
+    <div class="loading-icon">
+      <span class="material-symbols-outlined">receipt_long</span>
     </div>
 
-    <%= submit_tag "Procesar boleta" %>
-  <% end %>
-</section>
+    <h2>Leyendo recibo...</h2>
+    <p>Espera un momento mientras extraemos los datos de tu boleta.</p>
 
-<p><%= link_to "Volver", purchases_path %></p>
+    <div class="loading-progress" aria-hidden="true">
+      <span></span>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const dropzone = document.querySelector("[data-dropzone]");
+    const input = document.querySelector("[data-file-input]");
+    const label = document.querySelector("[data-file-label]");
+    const paper = document.querySelector(".receipt-paper");
+    const previewTitle = document.querySelector("[data-preview-title]");
+    const previewSubtitle = document.querySelector("[data-preview-subtitle]");
+    const form = document.querySelector("[data-processing-form]");
+    const modal = document.querySelector("[data-loading-modal]");
+
+    if (!dropzone || !input || !label || !paper) return;
+
+    const setFile = (file) => {
+      if (!file) return;
+
+      label.textContent = file.name;
+
+      if (file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          paper.innerHTML = `<img src="${event.target.result}" alt="Vista previa de boleta">`;
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+
+      paper.innerHTML = `
+        <span class="material-symbols-outlined">picture_as_pdf</span>
+        <strong>${file.name}</strong>
+        <small>El PDF se procesará al presionar Procesar boleta.</small>
+      `;
+    };
+
+    dropzone.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      dropzone.classList.add("is-dragging");
+    });
+
+    dropzone.addEventListener("dragleave", () => {
+      dropzone.classList.remove("is-dragging");
+    });
+
+    dropzone.addEventListener("drop", (event) => {
+      event.preventDefault();
+      dropzone.classList.remove("is-dragging");
+
+      if (event.dataTransfer.files.length > 0) {
+        input.files = event.dataTransfer.files;
+        setFile(event.dataTransfer.files[0]);
+      }
+    });
+
+    input.addEventListener("change", () => setFile(input.files[0]));
+
+    if (form && modal) {
+      form.addEventListener("submit", () => {
+        modal.hidden = false;
+      });
+    }
+  });
+</script>
