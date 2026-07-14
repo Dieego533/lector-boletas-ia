@@ -75,12 +75,14 @@ class PurchasesController < ApplicationController
   end
 
   def edit
+    @return_to = safe_return_path(params[:return_to]) || purchase_path(@purchase)
   end
 
   def update
     if @purchase.update(purchase_params)
-      redirect_to @purchase, notice: "Compra guardada correctamente."
+      redirect_to safe_return_path(params[:return_to]) || @purchase, notice: "Compra guardada correctamente."
     else
+      @return_to = safe_return_path(params[:return_to]) || purchase_path(@purchase)
       render :edit, status: :unprocessable_entity
     end
   end
@@ -104,14 +106,24 @@ class PurchasesController < ApplicationController
       :document_number,
       :purchase_date,
       :total_amount,
-      :currency,
       :raw_text,
       :processing_error
-    )
+    ).merge(currency: "CLP")
   end
 
   def ai_engine_param
     params[:ai_engine]
+  end
+
+  def safe_return_path(path)
+    return if path.blank?
+
+    uri = URI.parse(path)
+    return unless uri.host.blank? && uri.scheme.blank? && uri.path.start_with?("/")
+
+    uri.to_s
+  rescue URI::InvalidURIError
+    nil
   end
 
   def preview_file(uploaded_receipt)

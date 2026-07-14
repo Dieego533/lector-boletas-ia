@@ -1,5 +1,5 @@
 <% if purchase.errors.any? %>
-  <div>
+  <div class="form-errors">
     <h2>No se pudo guardar</h2>
     <ul>
       <% purchase.errors.full_messages.each do |message| %>
@@ -9,37 +9,38 @@
   </div>
 <% end %>
 
-<%= form_with model: purchase do |form| %>
-  <div>
-    <%= form.label :merchant_name, "Comercio" %><br>
-    <%= form.text_field :merchant_name %>
-  </div>
+<%= form_with model: purchase, class: "purchase-edit-form" do |form| %>
+  <%= hidden_field_tag :return_to, local_assigns[:return_to] if local_assigns[:return_to].present? %>
 
-    <div>
-      <%= form.label :merchant_rut, "RUT comercio" %><br>
-      <%= form.text_field :merchant_rut %>
+  <div class="purchase-edit-fields">
+    <div class="field-full">
+      <%= form.label :merchant_name, "Comercio" %>
+      <%= form.text_field :merchant_name, placeholder: "Nombre del comercio" %>
     </div>
 
     <div>
-      <%= form.label :document_number, "Número de documento" %><br>
-      <%= form.text_field :document_number %>
+      <%= form.label :merchant_rut, "RUT comercio" %>
+      <%= form.text_field :merchant_rut, placeholder: "76.123.456-7" %>
     </div>
 
     <div>
-      <%= form.label :purchase_date, "Fecha de compra" %><br>
+      <%= form.label :document_number, "Número de documento" %>
+      <%= form.text_field :document_number, placeholder: "Ej: 123456" %>
+    </div>
+
+    <div>
+      <%= form.label :purchase_date, "Fecha de compra" %>
       <%= form.date_field :purchase_date %>
     </div>
 
     <div>
-      <%= form.label :total_amount, "Total" %><br>
-      <%= form.number_field :total_amount, step: 1, min: 0 %>
+      <%= form.label :total_amount, "Total" %>
+      <%= form.number_field :total_amount, step: 1, min: 0, placeholder: "0", value: purchase.total_amount.present? ? purchase.total_amount.to_i : purchase.total_amount %>
     </div>
+  </div>
 
-    <div>
-      <%= form.label :currency, "Moneda" %><br>
-      <%= form.text_field :currency %>
-    </div>
-  <div>
-    <%= form.submit submit_text %>
+  <div class="purchase-edit-actions">
+    <%= link_to "Cancelar", local_assigns.fetch(:cancel_path, purchases_path), class: "button button-secondary" %>
+    <%= form.submit submit_text, class: "save-review-button" %>
   </div>
 <% end %>

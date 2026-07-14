@@ -88,12 +88,7 @@
 
         <div>
           <%= form.label :total_amount, "Total" %>
-          <%= form.number_field :total_amount, step: 1, min: 0, placeholder: "0" %>
-        </div>
-
-        <div class="field-compact">
-          <%= form.label :currency, "Moneda" %>
-          <%= form.text_field :currency %>
+          <%= form.number_field :total_amount, step: 1, min: 0, placeholder: "0", value: @purchase.total_amount.present? ? @purchase.total_amount.to_i : @purchase.total_amount %>
         </div>
       </div>
 

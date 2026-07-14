@@ -1,15 +1,32 @@
-<h1>Revisar compra</h1>
+<div class="back-row">
+  <% return_path = @return_to || purchase_path(@purchase) %>
+
+  <%= link_to return_path, class: "back-link" do %>
+    <span class="material-symbols-outlined">arrow_back</span>
+    Volver
+  <% end %>
+</div>
+
+<header class="edit-purchase-header">
+  <h1>Editar compra</h1>
+  <p>Corrige los datos guardados de la boleta.</p>
+</header>
 
 <% if notice.present? %>
-  <p><%= notice %></p>
+  <p class="notice"><%= notice %></p>
 <% end %>
 
 <% if @purchase.processing_error.present? %>
-  <p>No se pudo procesar la boleta automaticamente: <%= @purchase.processing_error %></p>
+  <p class="notice">No se pudo procesar la boleta automáticamente: <%= @purchase.processing_error %></p>
 <% end %>
 
-<p>Corrige los datos guardados.</p>
+<div class="edit-purchase-shell">
+  <section class="edit-purchase-card">
+    <div class="edit-purchase-card-header">
+      <span class="material-symbols-outlined">edit_note</span>
+      <h2>Datos de la compra</h2>
+    </div>
 
-<%= render "form", purchase: @purchase, submit_text: "Guardar compra" %>
-
-<p><%= link_to "Volver", purchases_path %></p>
+    <%= render "purchases/form", purchase: @purchase, submit_text: "Guardar compra", cancel_path: return_path, return_to: return_path %>
+  </section>
+</div>

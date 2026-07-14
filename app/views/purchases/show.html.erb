@@ -1,13 +1,29 @@
-<div class="page-header">
+<div class="back-row">
+  <%= link_to purchases_path, class: "back-link" do %>
+    <span class="material-symbols-outlined">arrow_back</span>
+    Volver
+  <% end %>
+</div>
+
+<div class="purchase-detail-header">
   <div>
-    <h1>Detalle de compra</h1>
+    <h1>
+      <span class="material-symbols-outlined">receipt_long</span>
+      Detalle de compra
+    </h1>
     <p>Información guardada y datos de procesamiento de la boleta.</p>
   </div>
 
-  <div class="header-actions">
-    <%= link_to "Editar", edit_purchase_path(@purchase), class: "button" %>
-    <%= button_to "Eliminar", purchase_path(@purchase), method: :delete, form: { data: { turbo_confirm: "¿Eliminar esta compra?" } }, class: "button button-danger" %>
-    <%= link_to "Volver", purchases_path %>
+  <div class="purchase-detail-actions">
+    <%= link_to edit_purchase_path(@purchase, return_to: purchase_path(@purchase)), class: "detail-action-button edit" do %>
+      <span class="material-symbols-outlined">edit</span>
+      Editar
+    <% end %>
+
+    <%= button_to purchase_path(@purchase), method: :delete, form: { data: { turbo_confirm: "¿Eliminar esta compra?" } }, class: "detail-action-button danger" do %>
+      <span class="material-symbols-outlined">delete</span>
+      Eliminar
+    <% end %>
   </div>
 </div>
 
@@ -15,63 +31,135 @@
   <p class="notice"><%= notice %></p>
 <% end %>
 
-<section class="panel">
-  <h2>Datos de la compra</h2>
+<div class="purchase-detail-layout">
+  <section class="detail-card ai-card">
+    <div class="detail-card-title">
+      <div>
+        <span class="material-symbols-outlined">psychology</span>
+        <h2>Procesamiento IA</h2>
+      </div>
+    </div>
 
-  <dl class="details-grid">
-    <dt>Comercio</dt>
-    <dd><%= @purchase.merchant_name.presence || "No informado" %></dd>
+    <div class="ai-facts">
+      <div class="ai-fact">
+        <span>Opción seleccionada</span>
+        <strong><%= @purchase.ai_engine_label.presence || "No registrada" %></strong>
+      </div>
 
-    <dt>RUT comercio</dt>
-    <dd><%= @purchase.merchant_rut.presence || "No informado" %></dd>
+      <div class="ai-fact">
+        <span>Método utilizado</span>
+        <strong><%= @purchase.resolved_ai_engine_label.presence || "No registrado" %></strong>
+      </div>
 
-    <dt>Número de documento</dt>
-    <dd><%= @purchase.document_number.presence || "No informado" %></dd>
+      <div class="ai-fact">
+        <span>Modelo usado</span>
+        <strong class="model-value">
+          <i></i>
+          <%= @purchase.ai_model.presence || "No registrado" %>
+        </strong>
+      </div>
 
-    <dt>Fecha</dt>
-    <dd><%= @purchase.purchase_date || "No informada" %></dd>
+      <div class="ai-fact">
+        <span>Fecha de registro</span>
+        <strong><%= @purchase.created_at.strftime("%d-%m-%Y %H:%M") %></strong>
+      </div>
 
-    <dt>Total</dt>
-    <dd><%= @purchase.total_amount.present? ? number_to_currency(@purchase.total_amount, unit: "$", precision: 0) : "No informado" %></dd>
+      <% if @purchase.processing_error.present? %>
+        <div class="ai-fact error">
+          <span>Error de procesamiento</span>
+          <strong><%= @purchase.processing_error %></strong>
+        </div>
+      <% end %>
+    </div>
 
-    <dt>Moneda</dt>
-    <dd><%= @purchase.currency %></dd>
-  </dl>
-</section>
+    <div class="detail-accordions">
+      <% if @purchase.ai_data.present? %>
+        <details class="detail-accordion">
+          <summary>
+            <span>
+              <span class="material-symbols-outlined">arrow_right</span>
+              Ver respuesta IA
+            </span>
+            <small>JSON</small>
+          </summary>
+          <pre><%= JSON.pretty_generate(@purchase.ai_data) %></pre>
+        </details>
+      <% end %>
 
-<section class="panel">
-  <h2>Procesamiento IA</h2>
+      <% if @purchase.raw_text.present? %>
+        <details class="detail-accordion">
+          <summary>
+            <span>
+              <span class="material-symbols-outlined">arrow_right</span>
+              Ver texto OCR
+            </span>
+            <small>RAW</small>
+          </summary>
+          <pre><%= @purchase.raw_text %></pre>
+        </details>
+      <% end %>
+    </div>
+  </section>
 
-  <dl class="details-grid">
-    <dt>Opción seleccionada</dt>
-    <dd><%= @purchase.ai_engine_label.presence || "No registrada" %></dd>
+  <section class="detail-card data-card">
+    <div class="detail-card-title simple">
+      <div>
+        <span class="material-symbols-outlined">receipt_long</span>
+        <h2>Datos de la compra</h2>
+      </div>
+    </div>
 
-    <dt>Método utilizado</dt>
-    <dd><%= @purchase.resolved_ai_engine_label.presence || "No registrado" %></dd>
+    <div class="purchase-data-grid">
+      <div class="purchase-data-item full">
+        <span>Comercio</span>
+        <strong><%= @purchase.merchant_name.presence || "No informado" %></strong>
+      </div>
 
-    <dt>Modelo usado</dt>
-    <dd><%= @purchase.ai_model.presence || "No registrado" %></dd>
+      <div class="purchase-data-item">
+        <span>RUT comercio</span>
+        <strong><%= @purchase.merchant_rut.presence || "No informado" %></strong>
+      </div>
 
-    <dt>Fecha de registro</dt>
-    <dd><%= @purchase.created_at.strftime("%d-%m-%Y %H:%M") %></dd>
+      <div class="purchase-data-item">
+        <span>Número de documento</span>
+        <strong><%= @purchase.document_number.presence || "No informado" %></strong>
+      </div>
 
-    <% if @purchase.processing_error.present? %>
-    <dt>Error de procesamiento</dt>
-    <dd><%= @purchase.processing_error %></dd>
-    <% end %>
-  </dl>
+      <div class="purchase-data-item">
+        <span>Fecha</span>
+        <strong><%= @purchase.purchase_date.presence || "No informada" %></strong>
+      </div>
 
-  <% if @purchase.ai_data.present? %>
-    <details>
-      <summary>Ver respuesta IA</summary>
-      <pre><%= JSON.pretty_generate(@purchase.ai_data) %></pre>
-    </details>
-  <% end %>
+      <div class="purchase-data-item total">
+        <span>Total</span>
+        <strong><%= @purchase.total_amount.present? ? number_to_currency(@purchase.total_amount, unit: "$", precision: 0, delimiter: ".", separator: ",") : "No informado" %></strong>
+      </div>
+    </div>
 
-  <% if @purchase.raw_text.present? %>
-    <details>
-      <summary>Ver texto extraido por OCR</summary>
-      <pre><%= @purchase.raw_text %></pre>
-    </details>
-  <% end %>
-</section>
+    <div class="product-breakdown">
+      <div class="product-breakdown-title">
+        <span class="material-symbols-outlined">list_alt</span>
+        <h3>Desglose de productos</h3>
+      </div>
+
+      <div class="products-list-card">
+        <div class="product-placeholder-item">
+          <div>
+            <span>Cant.</span>
+            <strong>-</strong>
+          </div>
+
+          <div>
+            <span>Descripción</span>
+            <strong>Los productos individuales aún no se extraen.</strong>
+          </div>
+
+          <div>
+            <span>Precio</span>
+            <strong>-</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
