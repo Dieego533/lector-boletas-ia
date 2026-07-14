@@ -1325,13 +1325,7 @@ pre {
   box-shadow: 0 16px 34px rgba(25, 28, 30, 0.12);
   max-width: 360px;
   padding: 16px;
-  transform: rotate(1deg);
-  transition: transform 220ms ease;
   width: 100%;
-}
-
-.receipt-placeholder:hover {
-  transform: rotate(0deg);
 }
 
 .receipt-paper {
@@ -1364,6 +1358,13 @@ pre {
   display: block;
   height: 100%;
   object-fit: contain;
+  width: 100%;
+}
+
+.receipt-paper iframe {
+  border: 0;
+  display: block;
+  height: 100%;
   width: 100%;
 }
 

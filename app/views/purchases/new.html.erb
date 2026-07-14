@@ -128,12 +128,24 @@
 
         label.textContent = file.name;
 
+        if (paper.dataset.previewUrl) {
+          URL.revokeObjectURL(paper.dataset.previewUrl);
+          delete paper.dataset.previewUrl;
+        }
+
         if (file.type.startsWith("image/")) {
           const reader = new FileReader();
           reader.onload = (event) => {
             paper.innerHTML = `<img src="${event.target.result}" alt="Vista previa de boleta">`;
           };
           reader.readAsDataURL(file);
+          return;
+        }
+
+        if (file.type === "application/pdf") {
+          const previewUrl = URL.createObjectURL(file);
+          paper.dataset.previewUrl = previewUrl;
+          paper.innerHTML = `<iframe src="${previewUrl}" title="Vista previa de boleta PDF"></iframe>`;
           return;
         }
 
@@ -179,6 +191,7 @@
     window.resetUploadFormBeforeCache = window.resetUploadFormBeforeCache || (() => {
       const dropzone = document.querySelector("[data-dropzone]");
       const input = document.querySelector("[data-file-input]");
+      const paper = document.querySelector(".receipt-paper");
       const modal = document.querySelector("[data-loading-modal]");
 
       if (dropzone) {
@@ -187,6 +200,10 @@
       }
 
       if (input) input.value = "";
+      if (paper?.dataset.previewUrl) {
+        URL.revokeObjectURL(paper.dataset.previewUrl);
+        delete paper.dataset.previewUrl;
+      }
       if (modal) modal.hidden = true;
     });
 
