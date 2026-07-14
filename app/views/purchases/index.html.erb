@@ -1,10 +1,13 @@
 <div class="page-header">
   <div>
     <h1>Compras registradas</h1>
-    <p>Consulta las boletas procesadas, revisa sus datos y vuelve a intentar IA si es necesario.</p>
+    <p>Consulta las boletas procesadas, revisa la información extraída y administra tus registros.</p>
   </div>
 
-  <%= link_to "Subir boleta", new_purchase_path, class: "button" %>
+  <%= link_to new_purchase_path, class: "button upload-button" do %>
+    <span class="material-symbols-outlined">upload_file</span>
+    Subir boleta
+  <% end %>
 </div>
 
 <% if notice.present? %>
@@ -12,7 +15,7 @@
 <% end %>
 
 <section class="panel">
-  <%= form_with url: purchases_path, method: :get, class: "filters" do %>
+  <%= form_with url: purchases_path, method: :get, class: "filters", data: { turbo_frame: "purchases_table" } do %>
     <div>
       <%= label_tag :query, "Buscar comercio o RUT" %>
       <%= text_field_tag :query, params[:query], placeholder: "Ej: Jumbo, 76..." %>
@@ -20,42 +23,75 @@
 
     <div class="filters-actions">
       <%= submit_tag "Filtrar", class: "button" %>
-      <%= link_to "Limpiar", purchases_path %>
+      <%= link_to "Limpiar", purchases_path, class: "button button-secondary" %>
     </div>
   <% end %>
 </section>
 
-<% if @purchases.any? %>
-  <table class="purchases-table">
-    <thead>
-      <tr>
-        <th>Comercio</th>
-        <th>RUT</th>
-        <th>Fecha</th>
-        <th>Total</th>
-        <th>Modelo IA</th>
-        <th>Creada</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @purchases.each do |purchase| %>
-        <tr>
-          <td><%= purchase.merchant_name.presence || "Sin comercio" %></td>
-          <td><%= purchase.merchant_rut.presence || "Sin RUT" %></td>
-          <td><%= purchase.purchase_date || "Sin fecha" %></td>
-          <td><%= purchase.total_amount.present? ? number_to_currency(purchase.total_amount, unit: "$", precision: 0) : "Sin total" %></td>
-          <td><%= purchase.ai_model.presence || "Sin IA" %></td>
-          <td><%= purchase.created_at.strftime("%d-%m-%Y %H:%M") %></td>
-          <td>
-            <%= link_to "Ver", purchase_path(purchase) %> |
-            <%= link_to "Editar", edit_purchase_path(purchase) %>
-            <%= button_to "Eliminar", purchase_path(purchase), method: :delete, form: { data: { turbo_confirm: "¿Eliminar esta compra?" } }, class: "link-button" %>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-<% else %>
-  <p class="empty-state">No hay compras para los filtros seleccionados.</p>
+<%= turbo_frame_tag "purchases_table" do %>
+  <% if @purchases.any? %>
+    <div class="table-card">
+      <table class="purchases-table">
+        <thead>
+          <tr>
+            <th>Comercio</th>
+            <th>RUT</th>
+            <th class="text-center">Fecha</th>
+            <th class="text-right">Total</th>
+            <th class="text-center">Creada</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @purchases.each do |purchase| %>
+            <tr>
+              <td class="merchant-cell"><%= purchase.merchant_name.presence || "Sin comercio" %></td>
+              <td class="mono-cell rut-cell"><%= purchase.merchant_rut.presence || "Sin RUT" %></td>
+              <td class="muted-cell text-center"><%= purchase.purchase_date.present? ? purchase.purchase_date.strftime("%d-%m-%y") : "Sin fecha" %></td>
+              <td class="amount-cell text-right"><%= purchase.total_amount.present? ? number_to_currency(purchase.total_amount, unit: "$", precision: 0, delimiter: ".", separator: ",") : "Sin total" %></td>
+              <td class="muted-cell text-center"><%= purchase.created_at.strftime("%d-%m-%y") %></td>
+              <td>
+                <div class="row-actions">
+                  <%= link_to purchase_path(purchase), data: { turbo_frame: "_top" } do %>
+                    <span class="material-symbols-outlined">visibility</span>
+                  <% end %>
+                  <%= link_to edit_purchase_path(purchase), data: { turbo_frame: "_top" } do %>
+                    <span class="material-symbols-outlined">edit</span>
+                  <% end %>
+                  <%= button_to purchase_path(purchase), method: :delete, form: { data: { turbo_confirm: "¿Eliminar esta compra?", turbo_frame: "_top" } }, class: "link-button" do %>
+                    <span class="material-symbols-outlined">delete</span>
+                  <% end %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+    <% if @total_pages > 1 %>
+      <div class="pagination-bar">
+        <p>Mostrando <%= @purchases.size %> de <%= @total_purchases %> compras</p>
+
+        <nav class="pagination" aria-label="Paginación de compras">
+          <% previous_page = @page - 1 %>
+          <% next_page = @page + 1 %>
+
+          <%= link_to purchases_path(query: params[:query], page: previous_page), class: "pagination-link #{'disabled' if @page == 1}", data: { turbo_frame: "purchases_table" }, aria: { label: "Página anterior" } do %>
+            <span class="material-symbols-outlined">chevron_left</span>
+          <% end %>
+
+          <% 1.upto(@total_pages) do |page| %>
+            <%= link_to page, purchases_path(query: params[:query], page: page), class: "pagination-link #{'active' if page == @page}", data: { turbo_frame: "purchases_table" } %>
+          <% end %>
+
+          <%= link_to purchases_path(query: params[:query], page: next_page), class: "pagination-link #{'disabled' if @page == @total_pages}", data: { turbo_frame: "purchases_table" }, aria: { label: "Página siguiente" } do %>
+            <span class="material-symbols-outlined">chevron_right</span>
+          <% end %>
+        </nav>
+      </div>
+    <% end %>
+  <% else %>
+    <p class="empty-state">No hay compras para los filtros seleccionados.</p>
+  <% end %>
 <% end %>

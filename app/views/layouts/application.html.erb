@@ -17,6 +17,10 @@
     <link rel="icon" href="/icon.png" type="image/png">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" rel="stylesheet">
 
     <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
@@ -26,11 +30,10 @@
   <body>
     <header class="site-header">
       <nav class="site-nav">
-        <%= link_to "Procesador de Boletas IA", root_path, class: "brand" %>
-        <div>
-          <%= link_to "Compras", purchases_path %>
-          <%= link_to "Subir boleta", new_purchase_path, class: "button button-small" %>
-        </div>
+        <%= link_to root_path, class: "brand" do %>
+          <span class="material-symbols-outlined">receipt_long</span>
+          Procesador de Boletas IA
+        <% end %>
       </nav>
     </header>
 

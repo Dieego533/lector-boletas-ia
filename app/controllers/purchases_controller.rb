@@ -3,8 +3,15 @@ require "base64"
 class PurchasesController < ApplicationController
   before_action :set_purchase, only: %i[show edit update destroy]
 
+  PURCHASES_PER_PAGE = 10
+
   def index
-    @purchases = Purchase.recent.search_by_merchant(params[:query])
+    @page = [params[:page].to_i, 1].max
+    purchases = Purchase.recent.search_by_merchant(params[:query])
+    @total_purchases = purchases.count
+    @total_pages = (@total_purchases.to_f / PURCHASES_PER_PAGE).ceil
+    @page = @total_pages if @total_pages.positive? && @page > @total_pages
+    @purchases = purchases.offset((@page - 1) * PURCHASES_PER_PAGE).limit(PURCHASES_PER_PAGE)
   end
 
   def show
