@@ -1,0 +1,41 @@
+<section class="success-overlay" data-success-redirect-url="<%= purchases_path %>">
+  <div class="success-modal" role="status" aria-live="polite">
+    <div class="success-icon-box">
+      <span class="material-symbols-outlined">check</span>
+    </div>
+
+    <h1>¡Boleta Guardada!</h1>
+    <p>La información fue registrada correctamente.</p>
+
+    <div class="success-actions">
+      <%= link_to new_purchase_path, class: "success-primary-button", data: { stop_success_redirect: true } do %>
+        <span class="material-symbols-outlined">add_circle</span>
+        Subir otra boleta
+      <% end %>
+
+      <%= link_to purchases_path, class: "success-secondary-button", data: { stop_success_redirect: true } do %>
+        <span class="material-symbols-outlined">receipt_long</span>
+        Ir a compras
+      <% end %>
+    </div>
+  </div>
+</section>
+
+<script>
+  window.setupSuccessRedirect = window.setupSuccessRedirect || (() => {
+    document.querySelectorAll("[data-success-redirect-url]").forEach((screen) => {
+      if (screen.dataset.successRedirectReady) return;
+
+      screen.dataset.successRedirectReady = "true";
+      const timeout = window.setTimeout(() => {
+        window.location.href = screen.dataset.successRedirectUrl;
+      }, 10000);
+
+      screen.querySelectorAll("[data-stop-success-redirect]").forEach((link) => {
+        link.addEventListener("click", () => window.clearTimeout(timeout));
+      });
+    });
+  });
+
+  window.setupSuccessRedirect();
+</script>

@@ -1,7 +1,7 @@
 require "base64"
 
 class PurchasesController < ApplicationController
-  before_action :set_purchase, only: %i[show edit update destroy]
+  before_action :set_purchase, only: %i[show saved edit update destroy]
 
   PURCHASES_PER_PAGE = 10
 
@@ -15,6 +15,9 @@ class PurchasesController < ApplicationController
   end
 
   def show
+  end
+
+  def saved
   end
 
   def new
@@ -54,7 +57,15 @@ class PurchasesController < ApplicationController
     @purchase.ai_response = JSON.parse(params.dig(:purchase, :ai_response).presence || "{}")
 
     if @purchase.save
-      redirect_to @purchase, notice: "Compra guardada correctamente."
+      respond_to do |format|
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.update(
+            "success_modal_root",
+            partial: "purchases/saved_modal"
+          )
+        end
+        format.html { redirect_to saved_purchase_path(@purchase) }
+      end
     else
       @raw_text = @purchase.raw_text
       @ai_response = @purchase.ai_response

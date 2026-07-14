@@ -13,5 +13,6 @@ Rails.application.routes.draw do
 
   resources :purchases, only: %i[index show new create edit update destroy] do
     post :preview, on: :collection
+    get :saved, on: :member
   end
 end

@@ -1,71 +1,186 @@
-<div class="page-header">
+<header class="review-header">
   <div>
     <h1>Revisa la información antes de guardar</h1>
     <p>Los campos son editables. La compra sólo se guardará cuando presiones Guardar compra.</p>
   </div>
+</header>
 
-  <%= link_to "Cancelar", new_purchase_path %>
-</div>
+<% if notice.present? %>
+  <p class="notice"><%= notice %></p>
+<% end %>
 
-<div class="preview-layout">
-  <section class="panel receipt-preview">
-    <div class="preview-title">
-      <h2>Boleta original</h2>
+<% if @processing_error.present? %>
+  <p class="notice"><%= @processing_error %></p>
+<% end %>
+
+<div class="review-layout">
+  <section class="review-receipt-card">
+    <div class="review-card-header">
+      <div>
+        <span class="material-symbols-outlined">receipt_long</span>
+        <h2>Boleta original</h2>
+      </div>
+
       <% if @preview_file.present? %>
-        <span><%= @preview_file[:filename] %></span>
+        <small><%= @preview_file[:filename] %></small>
       <% end %>
     </div>
 
-    <% if @preview_file.present? && @preview_file[:content_type].start_with?("image/") %>
-      <img src="<%= @preview_file[:data_url] %>" alt="Boleta original">
-    <% elsif @preview_file.present? && @preview_file[:content_type] == "application/pdf" %>
-      <iframe src="<%= @preview_file[:data_url] %>" title="Boleta original"></iframe>
-    <% else %>
-      <p>No se muestra vista previa para archivos mayores a 3 MB. Los datos procesados se pueden revisar a la derecha.</p>
-    <% end %>
+    <div class="review-receipt-stage">
+      <% if @preview_file.present? && @preview_file[:content_type].start_with?("image/") %>
+        <div class="receipt-zoom-frame" data-receipt-zoom>
+          <%= link_to @preview_file[:data_url], target: "_blank", rel: "noopener", class: "open-receipt-button", aria: { label: "Abrir boleta en otra pestaña" } do %>
+            <span class="material-symbols-outlined">open_in_new</span>
+          <% end %>
+          <img src="<%= @preview_file[:data_url] %>" alt="Boleta original" data-receipt-zoom-image>
+          <div class="receipt-magnifier" data-receipt-magnifier aria-hidden="true"></div>
+        </div>
+      <% elsif @preview_file.present? && @preview_file[:content_type] == "application/pdf" %>
+        <div class="receipt-zoom-frame pdf-frame">
+          <%= link_to @preview_file[:data_url], target: "_blank", rel: "noopener", class: "open-receipt-button", aria: { label: "Abrir boleta en otra pestaña" } do %>
+            <span class="material-symbols-outlined">open_in_new</span>
+          <% end %>
+          <iframe src="<%= @preview_file[:data_url] %>" title="Boleta original"></iframe>
+        </div>
+      <% else %>
+        <div class="receipt-unavailable">
+          <span class="material-symbols-outlined">image_not_supported</span>
+          <strong>Vista previa no disponible</strong>
+          <small>No se muestra preview para archivos mayores a 3 MB. Revisa los datos extraídos a la derecha.</small>
+        </div>
+      <% end %>
+    </div>
   </section>
 
-  <section class="panel">
-    <% if notice.present? %>
-      <p class="notice"><%= notice %></p>
-    <% end %>
-
-    <%= form_with model: @purchase, url: purchases_path do |form| %>
+  <section class="review-form-card">
+    <%= form_with model: @purchase, url: purchases_path, class: "review-form" do |form| %>
       <%= form.hidden_field :raw_text, value: @raw_text %>
       <%= form.hidden_field :processing_error, value: @processing_error %>
       <%= form.hidden_field :ai_response, value: JSON.generate(@ai_response || {}) %>
 
-      <div>
-        <%= form.label :merchant_name, "Comercio" %><br>
-        <%= form.text_field :merchant_name %>
+      <div class="review-card-header compact">
+        <div>
+          <span class="material-symbols-outlined">edit_note</span>
+          <h2>Datos extraídos</h2>
+        </div>
       </div>
 
-      <div>
-        <%= form.label :merchant_rut, "RUT comercio" %><br>
-        <%= form.text_field :merchant_rut %>
+      <div class="review-fields">
+        <div class="field-full">
+          <%= form.label :merchant_name, "Comercio" %>
+          <%= form.text_field :merchant_name, placeholder: "Nombre del comercio" %>
+        </div>
+
+        <div>
+          <%= form.label :merchant_rut, "RUT comercio" %>
+          <%= form.text_field :merchant_rut, placeholder: "76.123.456-7" %>
+        </div>
+
+        <div>
+          <%= form.label :document_number, "N° documento" %>
+          <%= form.text_field :document_number, placeholder: "Ej: 123456" %>
+        </div>
+
+        <div>
+          <%= form.label :purchase_date, "Fecha de compra" %>
+          <%= form.date_field :purchase_date %>
+        </div>
+
+        <div>
+          <%= form.label :total_amount, "Total" %>
+          <%= form.number_field :total_amount, step: 1, min: 0, placeholder: "0" %>
+        </div>
+
+        <div class="field-compact">
+          <%= form.label :currency, "Moneda" %>
+          <%= form.text_field :currency %>
+        </div>
       </div>
 
-      <div>
-        <%= form.label :document_number, "Número de documento" %><br>
-        <%= form.text_field :document_number %>
+      <div class="items-review">
+        <div class="items-review-header">
+          <div>
+            <span class="material-symbols-outlined">list_alt</span>
+            <h3>Desglose de items</h3>
+          </div>
+          <small>Próximamente editable</small>
+        </div>
+
+        <div class="items-placeholder-table">
+          <div class="items-placeholder-row header">
+            <span>Producto</span>
+            <span>Cant.</span>
+            <span>Precio</span>
+          </div>
+          <div class="items-placeholder-row muted">
+            <span>Los productos individuales aún no se extraen.</span>
+            <span>-</span>
+            <span>-</span>
+          </div>
+        </div>
       </div>
 
-      <div>
-        <%= form.label :purchase_date, "Fecha de compra" %><br>
-        <%= form.date_field :purchase_date %>
+      <div class="review-actions">
+        <%= link_to "Cancelar", purchases_path, class: "button button-secondary" %>
+        <%= form.submit "Guardar compra", class: "save-review-button" %>
       </div>
-
-      <div>
-        <%= form.label :total_amount, "Total" %><br>
-        <%= form.number_field :total_amount, step: 1, min: 0 %>
-      </div>
-
-      <div>
-        <%= form.label :currency, "Moneda" %><br>
-        <%= form.text_field :currency %>
-      </div>
-
-      <%= form.submit "Guardar compra" %>
     <% end %>
   </section>
 </div>
+
+<div id="success_modal_root"></div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("[data-receipt-zoom]").forEach((frame) => {
+      const image = frame.querySelector("[data-receipt-zoom-image]");
+      const magnifier = frame.querySelector("[data-receipt-magnifier]");
+      if (!image) return;
+
+      const zoom = 2.4;
+      const size = 150;
+
+      const setMagnifierBackground = () => {
+        if (!magnifier) return;
+
+        magnifier.style.backgroundImage = `url(${image.src})`;
+        magnifier.style.backgroundSize = `${image.offsetWidth * zoom}px ${image.offsetHeight * zoom}px`;
+      };
+
+      if (image.complete) {
+        setMagnifierBackground();
+      } else {
+        image.addEventListener("load", setMagnifierBackground, { once: true });
+      }
+
+      window.addEventListener("resize", setMagnifierBackground);
+
+      frame.addEventListener("mousemove", (event) => {
+        if (!magnifier) return;
+
+        const rect = frame.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+
+        magnifier.style.left = `${x}px`;
+        magnifier.style.top = `${y}px`;
+        magnifier.style.backgroundPosition = `${-(x * zoom - size / 2)}px ${-(y * zoom - size / 2)}px`;
+      });
+
+      frame.addEventListener("mouseleave", () => {
+        if (!magnifier) return;
+
+        magnifier.style.left = "50%";
+        magnifier.style.top = "50%";
+      });
+    });
+
+    const modalRoot = document.getElementById("success_modal_root");
+    if (modalRoot) {
+      const observer = new MutationObserver(() => {
+        if (window.setupSuccessRedirect) window.setupSuccessRedirect();
+      });
+      observer.observe(modalRoot, { childList: true });
+    }
+  });
+</script>
