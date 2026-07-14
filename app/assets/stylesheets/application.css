@@ -765,6 +765,15 @@ pre {
   font-weight: 700;
 }
 
+.products-table .empty-products-message {
+  color: var(--muted);
+  font-family: var(--sans);
+  font-weight: 600;
+  padding: 22px 14px;
+  text-align: center;
+  white-space: normal;
+}
+
 .product-placeholder-item {
   display: grid;
   gap: 0;

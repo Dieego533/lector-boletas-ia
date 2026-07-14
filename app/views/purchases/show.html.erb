@@ -168,23 +168,23 @@
           </table>
         </div>
       <% else %>
-        <div class="products-list-card">
-          <div class="product-placeholder-item">
-            <div>
-              <span>Cant.</span>
-              <strong>-</strong>
-            </div>
-
-            <div>
-              <span>Descripción</span>
-              <strong>Los productos individuales aún no se extraen.</strong>
-            </div>
-
-            <div>
-              <span>Precio</span>
-              <strong>-</strong>
-            </div>
-          </div>
+        <div class="products-table-card">
+          <table class="products-table empty-products-table">
+            <thead>
+              <tr>
+                <th>Cant.</th>
+                <th>Descripción</th>
+                <th class="text-right">Precio</th>
+                <th class="text-right">Desc.</th>
+                <th class="text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colspan="5" class="empty-products-message">No hay productos en el desglose.</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       <% end %>
     </div>
