@@ -10,6 +10,7 @@ class ReceiptProcessor
 
   GEMINI_MODEL = "gemini-3.1-flash-lite".freeze
   GROQ_TEXT_MODEL = "llama-3.1-8b-instant".freeze
+  OCR_AUTO_MAX_SIZE = 1.5.megabytes
 
   ENGINES = {
     "auto" => {
@@ -149,6 +150,11 @@ class ReceiptProcessor
   end
 
   def request_auto
+    if uploaded_file.size > OCR_AUTO_MAX_SIZE
+      @resolved_engine = "vision"
+      return request_gemini
+    end
+
     @raw_text = extract_text_with_ocr_space
     raise "OCR.space no detecto texto suficiente. Prueba Análisis inteligente." if raw_text.blank? || raw_text.length < 20
 

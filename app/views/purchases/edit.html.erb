@@ -17,7 +17,7 @@
 <% end %>
 
 <% if @purchase.processing_error.present? %>
-  <p class="notice">No se pudo procesar la boleta automáticamente: <%= @purchase.processing_error %></p>
+  <p class="alert">No se pudo procesar la boleta. Intenta nuevamente con otro método.</p>
 <% end %>
 
 <div class="edit-purchase-shell">

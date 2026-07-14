@@ -18,7 +18,7 @@
 <% end %>
 
 <% if @processing_error.present? %>
-  <p class="notice"><%= @processing_error %></p>
+  <p class="alert"><%= @processing_error %></p>
 <% end %>
 
 <div class="upload-grid">
@@ -34,6 +34,14 @@
         <strong data-file-label>Haga clic o arrastre su boleta aquí</strong>
       </label>
       <%= file_field_tag :receipt, id: "receipt-input", accept: "application/pdf,image/png,image/jpeg", class: "file-input", data: { file_input: true } %>
+
+      <div class="mobile-camera-action">
+        <label class="camera-button" for="receipt-camera-input">
+          <span class="material-symbols-outlined">photo_camera</span>
+          Tomar foto
+        </label>
+        <%= file_field_tag :receipt_camera, id: "receipt-camera-input", accept: "image/*", capture: "environment", class: "file-input", data: { camera_input: true } %>
+      </div>
 
       <div class="processing-methods">
         <label>Método de procesamiento</label>
@@ -113,6 +121,7 @@
     window.setupUploadForm = window.setupUploadForm || (() => {
       const dropzone = document.querySelector("[data-dropzone]");
       const input = document.querySelector("[data-file-input]");
+      const cameraInput = document.querySelector("[data-camera-input]");
       const label = document.querySelector("[data-file-label]");
       const paper = document.querySelector(".receipt-paper");
       const form = document.querySelector("[data-processing-form]");
@@ -123,27 +132,85 @@
 
       dropzone.dataset.uploadReady = "true";
 
-      const setFile = (file) => {
+      const MAX_IMAGE_SIZE = 1.5 * 1024 * 1024;
+      const MAX_IMAGE_DIMENSION = 1800;
+      const JPEG_QUALITY = 0.85;
+
+      const replaceInputFile = (targetInput, file) => {
+        if (!targetInput || !file || typeof DataTransfer === "undefined") return;
+
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        targetInput.files = dataTransfer.files;
+      };
+
+      const compressImage = (file) => new Promise((resolve) => {
+        if (!file.type.startsWith("image/") || file.size <= MAX_IMAGE_SIZE) {
+          resolve(file);
+          return;
+        }
+
+        const image = new Image();
+        const objectUrl = URL.createObjectURL(file);
+
+        image.onload = () => {
+          const scale = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(image.width, image.height));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.round(image.width * scale);
+          canvas.height = Math.round(image.height * scale);
+
+          const context = canvas.getContext("2d");
+          context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+          canvas.toBlob((blob) => {
+            URL.revokeObjectURL(objectUrl);
+
+            if (!blob || blob.size >= file.size) {
+              resolve(file);
+              return;
+            }
+
+            const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), {
+              type: "image/jpeg",
+              lastModified: Date.now()
+            });
+
+            resolve(compressedFile);
+          }, "image/jpeg", JPEG_QUALITY);
+        };
+
+        image.onerror = () => {
+          URL.revokeObjectURL(objectUrl);
+          resolve(file);
+        };
+
+        image.src = objectUrl;
+      });
+
+      const setFile = async (file, targetInput) => {
         if (!file) return;
 
-        label.textContent = file.name;
+        const processedFile = await compressImage(file);
+        replaceInputFile(targetInput, processedFile);
+
+        label.textContent = processedFile === file ? processedFile.name : `${processedFile.name} (optimizada)`;
 
         if (paper.dataset.previewUrl) {
           URL.revokeObjectURL(paper.dataset.previewUrl);
           delete paper.dataset.previewUrl;
         }
 
-        if (file.type.startsWith("image/")) {
+        if (processedFile.type.startsWith("image/")) {
           const reader = new FileReader();
           reader.onload = (event) => {
             paper.innerHTML = `<img src="${event.target.result}" alt="Vista previa de boleta">`;
           };
-          reader.readAsDataURL(file);
+          reader.readAsDataURL(processedFile);
           return;
         }
 
-        if (file.type === "application/pdf") {
-          const previewUrl = URL.createObjectURL(file);
+        if (processedFile.type === "application/pdf") {
+          const previewUrl = URL.createObjectURL(processedFile);
           paper.dataset.previewUrl = previewUrl;
           paper.innerHTML = `<iframe src="${previewUrl}" title="Vista previa de boleta PDF"></iframe>`;
           return;
@@ -151,7 +218,7 @@
 
         paper.innerHTML = `
           <span class="material-symbols-outlined">picture_as_pdf</span>
-          <strong>${file.name}</strong>
+          <strong>${processedFile.name}</strong>
           <small>El PDF se procesará al presionar Procesar boleta.</small>
         `;
       };
@@ -171,15 +238,31 @@
 
         if (event.dataTransfer.files.length > 0) {
           input.files = event.dataTransfer.files;
-          setFile(event.dataTransfer.files[0]);
+          setFile(event.dataTransfer.files[0], input);
         }
       });
 
       input.addEventListener("click", () => {
         input.value = "";
+        if (cameraInput) cameraInput.value = "";
       });
 
-      input.addEventListener("change", () => setFile(input.files[0]));
+      input.addEventListener("change", () => {
+        if (cameraInput) cameraInput.value = "";
+        setFile(input.files[0], input);
+      });
+
+      if (cameraInput) {
+        cameraInput.addEventListener("click", () => {
+          cameraInput.value = "";
+          input.value = "";
+        });
+
+        cameraInput.addEventListener("change", () => {
+          input.value = "";
+          setFile(cameraInput.files[0], cameraInput);
+        });
+      }
 
       if (form && modal) {
         form.addEventListener("submit", () => {
@@ -191,6 +274,7 @@
     window.resetUploadFormBeforeCache = window.resetUploadFormBeforeCache || (() => {
       const dropzone = document.querySelector("[data-dropzone]");
       const input = document.querySelector("[data-file-input]");
+      const cameraInput = document.querySelector("[data-camera-input]");
       const paper = document.querySelector(".receipt-paper");
       const modal = document.querySelector("[data-loading-modal]");
 
@@ -200,6 +284,7 @@
       }
 
       if (input) input.value = "";
+      if (cameraInput) cameraInput.value = "";
       if (paper?.dataset.previewUrl) {
         URL.revokeObjectURL(paper.dataset.previewUrl);
         delete paper.dataset.previewUrl;

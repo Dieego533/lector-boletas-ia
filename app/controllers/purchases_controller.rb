@@ -25,7 +25,7 @@ class PurchasesController < ApplicationController
   end
 
   def preview
-    uploaded_receipt = params[:receipt]
+    uploaded_receipt = params[:receipt].presence || params[:receipt_camera]
 
     unless uploaded_receipt.present?
       @purchase = Purchase.new
@@ -38,7 +38,7 @@ class PurchasesController < ApplicationController
 
     unless result.success?
       @purchase = Purchase.new
-      @processing_error = result.processing_error
+      @processing_error = processing_error_message
       render :new, status: :unprocessable_entity
       return
     end
@@ -123,6 +123,10 @@ class PurchasesController < ApplicationController
 
   def ai_engine_param
     params[:ai_engine]
+  end
+
+  def processing_error_message
+    "No se pudo procesar la boleta. Intenta nuevamente con otro método."
   end
 
   def safe_return_path(path)
