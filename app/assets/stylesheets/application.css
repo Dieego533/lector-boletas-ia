@@ -36,6 +36,130 @@ body {
   line-height: 1.5;
 }
 
+.access-lock-body {
+  background-color: #f3f6f7;
+  background-image: radial-gradient(circle at 1px 1px, rgba(0, 67, 73, 0.12) 1px, transparent 0);
+  background-size: 22px 22px;
+}
+
+.access-lock-screen {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.access-lock-card {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 18px 46px rgba(25, 28, 30, 0.1);
+  display: flex;
+  flex-direction: column;
+  max-width: 380px;
+  padding: 48px 32px;
+  text-align: center;
+  width: 100%;
+}
+
+.access-lock-icon {
+  align-items: center;
+  background: #0a6870;
+  border-radius: 7px;
+  display: flex;
+  height: 56px;
+  justify-content: center;
+  margin-bottom: 24px;
+  width: 56px;
+}
+
+.access-lock-icon .material-symbols-outlined {
+  color: #ffffff;
+  font-size: 28px;
+}
+
+.access-lock-card h1 {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+  margin: 0 0 8px;
+}
+
+.access-lock-card > p {
+  color: var(--muted);
+  font-size: 15px;
+  margin: 0 0 30px;
+  max-width: 280px;
+}
+
+.access-lock-form {
+  text-align: left;
+  width: 100%;
+}
+
+.access-lock-form label {
+  font-size: 10px;
+  margin-bottom: 7px;
+}
+
+.access-lock-form input[type="password"] {
+  background: #f8fafb;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font: inherit;
+  padding: 13px 14px;
+  width: 100%;
+}
+
+.access-lock-form input[type="password"]:focus {
+  border-color: #0a6870;
+  outline: 2px solid rgba(10, 104, 112, 0.16);
+  outline-offset: 1px;
+}
+
+.access-lock-button {
+  align-items: center;
+  background: #0a6870;
+  border: 0;
+  border-radius: 4px;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 18px;
+  min-height: 50px;
+  width: 100%;
+}
+
+.access-lock-button:hover {
+  background: var(--primary-dark);
+}
+
+.access-lock-button .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.access-lock-error {
+  background: #fff0ee;
+  border: 1px solid #ffb4ab;
+  border-radius: 4px;
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0 0 18px !important;
+  max-width: none !important;
+  padding: 10px 12px;
+  text-align: left;
+  width: 100%;
+}
+
 a {
   color: var(--primary);
 }
@@ -1928,6 +2052,21 @@ pre {
 }
 
 @media (max-width: 760px) {
+  .access-lock-screen {
+    align-items: flex-start;
+    padding: 16px;
+    padding-top: max(16px, env(safe-area-inset-top));
+  }
+
+  .access-lock-card {
+    margin-top: 8vh;
+    padding: 38px 22px;
+  }
+
+  .access-lock-card h1 {
+    font-size: 24px;
+  }
+
   .site-nav,
   .page-header,
   .header-actions,

@@ -1,0 +1,24 @@
+<main class="access-lock-screen">
+  <section class="access-lock-card" aria-labelledby="access-lock-title">
+    <div class="access-lock-icon">
+      <span class="material-symbols-outlined">receipt_long</span>
+    </div>
+
+    <h1 id="access-lock-title">Procesador de Boletas IA</h1>
+    <p>Ingresa la clave de acceso proporcionada para continuar.</p>
+
+    <% if alert.present? %>
+      <p class="access-lock-error" role="alert"><%= alert %></p>
+    <% end %>
+
+    <%= form_with url: access_path, method: :post, data: { turbo: false }, class: "access-lock-form" do %>
+      <%= label_tag :password, "Clave de acceso" %>
+      <%= password_field_tag :password, nil, required: true, autofocus: true, autocomplete: "current-password", placeholder: "Ingresa la clave" %>
+
+      <%= button_tag type: :submit, class: "access-lock-button" do %>
+        Acceder
+        <span class="material-symbols-outlined">arrow_forward</span>
+      <% end %>
+    <% end %>
+  </section>
+</main>
