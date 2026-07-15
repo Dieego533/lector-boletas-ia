@@ -36,6 +36,8 @@ body {
   color: var(--text);
   font-family: var(--sans);
   line-height: 1.5;
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 /* ---------- Fin variables y estilos base ---------- */
@@ -1379,6 +1381,8 @@ pre {
 .dropzone strong {
   font-size: 15px;
   margin-bottom: 6px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .dropzone small,
@@ -2098,6 +2102,23 @@ pre {
 /* ---------- Estilos responsivos ---------- */
 
 @media (max-width: 760px) {
+  html {
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  .site-nav {
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 16px;
+  }
+
+  .brand {
+    font-size: 18px;
+    white-space: nowrap;
+  }
+
   .access-lock-screen {
     align-items: flex-start;
     padding: 16px;
@@ -2113,7 +2134,6 @@ pre {
     font-size: 24px;
   }
 
-  .site-nav,
   .page-header,
   .header-actions,
   .review-header,
@@ -2134,6 +2154,17 @@ pre {
   }
 
   .purchase-detail-actions {
+    width: 100%;
+  }
+
+  .purchase-detail-layout,
+  .purchase-detail-header,
+  .purchase-detail-header > div,
+  .detail-card,
+  .data-card,
+  .ai-card,
+  .purchase-data-item {
+    min-width: 0;
     width: 100%;
   }
 
@@ -2160,12 +2191,106 @@ pre {
     flex-direction: column;
   }
 
+  .model-value,
+  .purchase-data-item strong,
+  .ai-fact strong {
+    overflow-wrap: anywhere;
+  }
+
   .product-placeholder-item > div {
     grid-template-columns: 1fr;
   }
 
   .product-placeholder-item span {
     justify-content: flex-start;
+  }
+
+  .products-table-card {
+    overflow: visible;
+  }
+
+  .products-table,
+  .products-table tbody,
+  .products-table tr,
+  .products-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .products-table {
+    table-layout: auto;
+  }
+
+  .products-table thead {
+    display: none;
+  }
+
+  .products-table th:nth-child(1),
+  .products-table td:nth-child(1),
+  .products-table th:nth-child(3),
+  .products-table td:nth-child(3),
+  .products-table th:nth-child(4),
+  .products-table td:nth-child(4),
+  .products-table th:nth-child(5),
+  .products-table td:nth-child(5) {
+    width: auto;
+  }
+
+  .products-table tbody tr {
+    border-bottom: 1px solid #edf0f1;
+    display: grid;
+    gap: 0;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 10px 12px;
+  }
+
+  .products-table tbody tr:last-child {
+    border-bottom: 0;
+  }
+
+  .products-table td {
+    align-items: center;
+    border: 0;
+    display: flex;
+    font-family: var(--sans) !important;
+    justify-content: space-between;
+    min-width: 0;
+    padding: 8px 0;
+    text-align: right !important;
+    white-space: normal !important;
+  }
+
+  .products-table td::before {
+    color: #7a8588;
+    content: attr(data-label);
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    margin-right: 12px;
+    text-align: left;
+    text-transform: uppercase;
+  }
+
+  .products-table td:nth-child(2) {
+    align-items: flex-start;
+    flex-direction: column;
+    text-align: left !important;
+  }
+
+  .products-table td:nth-child(2)::before {
+    margin-bottom: 5px;
+  }
+
+  .products-table .empty-products-message {
+    display: block;
+    grid-column: 1 / -1;
+    padding: 12px 0;
+    text-align: center !important;
+  }
+
+  .products-table .empty-products-message::before {
+    content: none;
   }
 
   .edit-purchase-header {
@@ -2216,24 +2341,72 @@ pre {
     display: block;
   }
 
+  .upload-grid,
+  .upload-card,
+  .preview-card,
+  .preview-stage,
+  .receipt-placeholder,
+  .receipt-paper {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .preview-stage {
+    min-height: 320px;
+    overflow: hidden;
+    padding: 16px;
+  }
+
+  .receipt-placeholder {
+    overflow: hidden;
+    padding: 10px;
+  }
+
+  .receipt-paper {
+    overflow: hidden;
+  }
+
+  .receipt-paper img,
+  .receipt-paper iframe {
+    max-height: 100%;
+    max-width: 100%;
+  }
+
   .success-modal {
-    max-width: 330px;
-    padding: 30px 20px 24px;
+    max-height: calc(100dvh - 32px);
+    max-width: 320px;
+    overflow-y: auto;
+    padding: 24px 20px 20px;
   }
 
   .success-modal h1 {
     font-size: 24px;
   }
 
-  .success-modal p,
+  .success-overlay {
+    max-width: 100vw;
+    padding: 16px;
+  }
+
+  .success-icon-box {
+    height: 58px;
+    margin-bottom: 16px;
+    width: 58px;
+  }
+
+  .success-icon-box .material-symbols-outlined {
+    font-size: 26px;
+    height: 36px;
+    width: 36px;
+  }
+
+  .success-modal p {
+    margin-bottom: 22px;
+  }
+
   .success-primary-button,
   .success-secondary-button {
     font-size: 14px;
-  }
-
-  .preview-stage {
-    min-height: 360px;
-    padding: 28px;
   }
 
   .purchases-table {

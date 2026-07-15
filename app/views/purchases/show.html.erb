@@ -162,11 +162,11 @@
             <tbody>
               <% @purchase.purchase_items.each do |item| %>
                 <tr>
-                  <td><%= item.quantity.to_i %></td>
-                  <td><%= item.description %></td>
-                  <td class="text-right"><%= item.unit_price.present? ? number_to_currency(item.unit_price, unit: "$", precision: 0, delimiter: ".", separator: ",") : "-" %></td>
-                  <td class="text-right"><%= item.discount_amount.to_i.positive? ? "-#{number_to_currency(item.discount_amount, unit: "$", precision: 0, delimiter: ".", separator: ",")}" : "-" %></td>
-                  <td class="text-right"><%= item.total_price.present? ? number_to_currency(item.total_price, unit: "$", precision: 0, delimiter: ".", separator: ",") : "-" %></td>
+                  <td data-label="Cantidad"><%= item.quantity.to_i %></td>
+                  <td data-label="Descripción"><%= item.description %></td>
+                  <td class="text-right" data-label="Precio"><%= item.unit_price.present? ? number_to_currency(item.unit_price, unit: "$", precision: 0, delimiter: ".", separator: ",") : "-" %></td>
+                  <td class="text-right" data-label="Descuento"><%= item.discount_amount.to_i.positive? ? "-#{number_to_currency(item.discount_amount, unit: "$", precision: 0, delimiter: ".", separator: ",")}" : "-" %></td>
+                  <td class="text-right" data-label="Total"><%= item.total_price.present? ? number_to_currency(item.total_price, unit: "$", precision: 0, delimiter: ".", separator: ",") : "-" %></td>
                 </tr>
               <% end %>
             </tbody>
