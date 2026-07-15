@@ -6,7 +6,16 @@ require "stringio"
 require "uri"
 
 class ReceiptProcessor
-  Result = Struct.new(:success?, :attributes, :raw_text, :ai_response, :processing_error, keyword_init: true)
+  class ProcessingError < StandardError
+    attr_reader :code
+
+    def initialize(code, message)
+      @code = code
+      super(message)
+    end
+  end
+
+  Result = Struct.new(:success?, :attributes, :raw_text, :ai_response, :processing_error, :error_code, keyword_init: true)
 
   GEMINI_MODEL = "gemini-3.1-flash-lite".freeze
   GROQ_TEXT_MODEL = "llama-3.1-8b-instant".freeze
@@ -52,6 +61,7 @@ class ReceiptProcessor
 
     response = request_ai
     extracted_data = parse_response(response)
+    validate_receipt_data!(extracted_data)
     attributes = attributes_from(extracted_data)
 
     Result.new(
@@ -65,9 +75,12 @@ class ReceiptProcessor
         "model" => model,
         "data" => extracted_data
       },
-      processing_error: nil
+      processing_error: nil,
+      error_code: nil
     )
   rescue StandardError => error
+    log_processing_error(error)
+
     Result.new(
       success?: false,
       attributes: {},
@@ -79,7 +92,8 @@ class ReceiptProcessor
         "model" => model_safe,
         "data" => {}
       },
-      processing_error: error.message
+      processing_error: error.message,
+      error_code: error_code_for(error)
     )
   end
 
@@ -90,13 +104,13 @@ class ReceiptProcessor
   attr_reader :raw_text
 
   def validate_uploaded_file!
-    raise "Debes subir una boleta para procesarla." if uploaded_file.blank?
-    raise "El archivo debe ser PDF, JPG o PNG." unless content_type.in?(%w[application/pdf image/jpeg image/png])
-    raise "El archivo debe pesar máximo 10 MB." if uploaded_file.size > 10.megabytes
+    raise ProcessingError.new(:missing_file, "Debes subir una boleta para procesarla.") if uploaded_file.blank?
+    raise ProcessingError.new(:unsupported_file_type, "El archivo debe ser PDF, JPG o PNG.") unless content_type.in?(%w[application/pdf image/jpeg image/png])
+    raise ProcessingError.new(:file_too_large, "El archivo debe pesar máximo 10 MB.") if uploaded_file.size > 10.megabytes
   end
 
   def engine_config
-    ENGINES.fetch(engine) { raise "Motor IA no permitido: #{engine}" }
+    ENGINES.fetch(engine) { raise ProcessingError.new(:unsupported_engine, "Motor IA no permitido: #{engine}") }
   end
 
   def resolved_engine
@@ -107,7 +121,7 @@ class ReceiptProcessor
   end
 
   def resolved_engine_config
-    ENGINES.fetch(resolved_engine)
+    ENGINES.fetch(resolved_engine) { raise ProcessingError.new(:unsupported_engine, "Motor IA no permitido: #{resolved_engine}") }
   end
 
   def provider
@@ -145,7 +159,7 @@ class ReceiptProcessor
     when "ocr_groq"
       request_ocr_groq
     else
-      raise "Proveedor IA no soportado: #{provider}"
+      raise ProcessingError.new(:unsupported_engine, "Proveedor IA no soportado: #{provider}")
     end
   end
 
@@ -156,7 +170,8 @@ class ReceiptProcessor
     end
 
     @raw_text = extract_text_with_ocr_space
-    raise "OCR.space no detecto texto suficiente. Prueba Análisis inteligente." if raw_text.blank? || raw_text.length < 20
+    raise ProcessingError.new(:ocr_failed, "OCR.space no detecto texto suficiente.") if raw_text.blank? || raw_text.length < 20
+    raise ProcessingError.new(:not_receipt, "OCR.space no detecto señales suficientes de boleta.") unless receipt_like_text?(raw_text)
 
     @resolved_engine = complex_receipt_text?(raw_text) ? "vision" : "ocr_text"
 
@@ -172,14 +187,16 @@ class ReceiptProcessor
     uri.query = URI.encode_www_form(key: ENV.fetch("GEMINI_API_KEY"))
 
     response = post_json(uri, gemini_payload)
-    raise "Gemini respondió HTTP #{response.code}: #{response.body}" unless response.is_a?(Net::HTTPSuccess)
+    raise ProcessingError.new(:ai_provider_failed, "Gemini respondió HTTP #{response.code}: #{response.body}") unless response.is_a?(Net::HTTPSuccess)
 
     JSON.parse(response.body)
+  rescue JSON::ParserError => error
+    raise ProcessingError.new(:ai_provider_failed, "Gemini devolvió JSON inválido: #{error.message}")
   end
 
   def request_ocr_groq
     @raw_text ||= extract_text_with_ocr_space
-    raise "OCR.space no detecto texto suficiente. Prueba Análisis inteligente." if raw_text.blank? || raw_text.length < 20
+    raise ProcessingError.new(:ocr_failed, "OCR.space no detecto texto suficiente.") if raw_text.blank? || raw_text.length < 20
 
     request_groq_with_text(raw_text)
   end
@@ -192,9 +209,11 @@ class ReceiptProcessor
     request.body = JSON.generate(groq_text_payload(text))
 
     response = perform_request(uri, request)
-    raise "Groq respondió HTTP #{response.code}: #{response.body}" unless response.is_a?(Net::HTTPSuccess)
+    raise ProcessingError.new(:ai_provider_failed, "Groq respondió HTTP #{response.code}: #{response.body}") unless response.is_a?(Net::HTTPSuccess)
 
     JSON.parse(response.body)
+  rescue JSON::ParserError => error
+    raise ProcessingError.new(:ai_provider_failed, "Groq devolvió JSON inválido: #{error.message}")
   end
 
   def complex_receipt_text?(text)
@@ -217,6 +236,22 @@ class ReceiptProcessor
     numeric_heavy_lines >= 2 || long_code_lines >= 2
   end
 
+  def receipt_like_text?(text)
+    normalized_text = I18n.transliterate(text.to_s).downcase
+    return false if normalized_text.blank?
+
+    amount_present = normalized_text.match?(/\$\s*\d{1,3}(?:[\.,]\d{3})+/) ||
+      normalized_text.match?(/\b(?:total|iva|neto|subtotal|precio|monto)\b[^\n\d]{0,20}\d{3,}/) ||
+      normalized_text.match?(/\b\d{1,3}(?:[\.,]\d{3})+\b/)
+
+    receipt_signals = %w[
+      boleta factura ticket comprobante rut total iva neto subtotal vendedor caja fecha cantidad precio detalle producto comercio monto
+    ]
+    signal_count = receipt_signals.count { |signal| normalized_text.include?(signal) }
+
+    amount_present && signal_count >= 2
+  end
+
   def extract_text_with_ocr_space
     uri = URI(OCR_SPACE_ENDPOINT)
     request = Net::HTTP::Post.new(uri)
@@ -234,12 +269,14 @@ class ReceiptProcessor
     )
 
     response = perform_request(uri, request)
-    raise "OCR.space respondió HTTP #{response.code}: #{response.body}" unless response.is_a?(Net::HTTPSuccess)
+    raise ProcessingError.new(:ocr_failed, "OCR.space respondió HTTP #{response.code}: #{response.body}") unless response.is_a?(Net::HTTPSuccess)
 
     body = JSON.parse(response.body)
-    raise "OCR.space error: #{body['ErrorMessage'] || body['ErrorDetails']}" if body["IsErroredOnProcessing"]
+    raise ProcessingError.new(:ocr_failed, "OCR.space error: #{body['ErrorMessage'] || body['ErrorDetails']}") if body["IsErroredOnProcessing"]
 
     Array(body["ParsedResults"]).filter_map { |result| result["ParsedText"] }.join("\n").strip
+  rescue JSON::ParserError => error
+    raise ProcessingError.new(:ocr_failed, "OCR.space devolvió JSON inválido: #{error.message}")
   end
 
   def post_json(uri, payload)
@@ -327,9 +364,11 @@ class ReceiptProcessor
       response.dig("choices", 0, "message", "content")
     end
 
-    raise "#{provider_name} no devolvio texto procesable" if text.blank?
+    raise ProcessingError.new(:invalid_ai_response, "#{provider_name} no devolvio texto procesable") if text.blank?
 
     JSON.parse(clean_json_text(text))
+  rescue JSON::ParserError => error
+    raise ProcessingError.new(:invalid_ai_response, "#{provider_name} devolvió JSON inválido: #{error.message}")
   end
 
   def clean_json_text(text)
@@ -364,6 +403,23 @@ class ReceiptProcessor
       currency: "CLP",
       purchase_items_attributes: item_attributes_from(data["items"])
     }.compact
+  end
+
+  def validate_receipt_data!(data)
+    total_amount = decimal_or_nil(data["total_amount"])
+    tax_amount = decimal_or_nil(data["tax_amount"])
+    items = Array(data["items"]).select { |item| item.is_a?(Hash) && item["description"].to_s.squish.present? }
+    identity_fields = [
+      data["merchant_name"],
+      data["merchant_rut"],
+      data["document_number"],
+      data["purchase_date"]
+    ].compact_blank
+
+    return if total_amount.present? && (identity_fields.any? || tax_amount.present? || items.any?)
+    return if items.any? && (total_amount.present? || tax_amount.present? || identity_fields.any?)
+
+    raise ProcessingError.new(:not_receipt, "La IA no devolvió datos mínimos de una boleta.")
   end
 
   def item_attributes_from(items)
@@ -422,5 +478,34 @@ class ReceiptProcessor
     return "OCR.space + Groq" if provider == "ocr_groq"
 
     "IA"
+  end
+
+  def error_code_for(error)
+    return error.code if error.respond_to?(:code)
+
+    :unknown_error
+  end
+
+  def log_processing_error(error)
+    Rails.logger.error(
+      "[ReceiptProcessor] " \
+      "code=#{error_code_for(error)} " \
+      "error_class=#{error.class.name} " \
+      "error_message=#{error.message.inspect} " \
+      "engine=#{engine.inspect} " \
+      "resolved_engine=#{resolved_engine_safe.inspect} " \
+      "provider=#{provider_safe.inspect} " \
+      "model=#{model_safe.inspect} " \
+      "content_type=#{content_type_safe.inspect} " \
+      "file_size=#{uploaded_file&.size.inspect} " \
+      "filename=#{uploaded_file&.original_filename.to_s.inspect} " \
+      "backtrace=#{Array(error.backtrace).first(5).join(' | ').inspect}"
+    )
+  end
+
+  def content_type_safe
+    content_type
+  rescue StandardError
+    nil
   end
 end

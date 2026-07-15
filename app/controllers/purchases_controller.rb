@@ -38,7 +38,7 @@ class PurchasesController < ApplicationController
 
     unless result.success?
       @purchase = Purchase.new
-      @processing_error = processing_error_message
+      @processing_error = processing_error_message(result.error_code)
       render :new, status: :unprocessable_entity
       return
     end
@@ -67,9 +67,10 @@ class PurchasesController < ApplicationController
         format.html { redirect_to saved_purchase_path(@purchase) }
       end
     else
+      log_save_error(@purchase)
       @raw_text = @purchase.raw_text
       @ai_response = @purchase.ai_response
-      @processing_error = @purchase.processing_error
+      @processing_error = save_error_message
       render :preview, status: :unprocessable_entity
     end
   end
@@ -82,6 +83,7 @@ class PurchasesController < ApplicationController
     if @purchase.update(purchase_params)
       redirect_to safe_return_path(params[:return_to]) || @purchase, notice: "Compra guardada correctamente."
     else
+      log_save_error(@purchase)
       @return_to = safe_return_path(params[:return_to]) || purchase_path(@purchase)
       render :edit, status: :unprocessable_entity
     end
@@ -125,8 +127,29 @@ class PurchasesController < ApplicationController
     params[:ai_engine]
   end
 
-  def processing_error_message
-    "No se pudo procesar la boleta. Intenta nuevamente con otro método."
+  def processing_error_message(error_code)
+    {
+      missing_file: "Debes subir una boleta para continuar.",
+      unsupported_file_type: "El archivo debe ser PDF, JPG o PNG.",
+      file_too_large: "El archivo no puede superar los 10 MB.",
+      ocr_failed: "No pudimos leer la boleta. Intenta nuevamente con otro método.",
+      ai_provider_failed: "No se pudo procesar la boleta. Intenta nuevamente con otro método.",
+      invalid_ai_response: "No pudimos estructurar la información. Intenta nuevamente con otro método.",
+      not_receipt: "No pudimos identificar una boleta en el archivo. Intenta con otra imagen o selecciona otro método.",
+      unsupported_engine: "El método de procesamiento seleccionado no está disponible."
+    }.fetch(error_code&.to_sym, "Ocurrió un problema al procesar la boleta. Intenta nuevamente.")
+  end
+
+  def save_error_message
+    "No se pudo guardar la compra. Revisa los campos e intenta nuevamente."
+  end
+
+  def log_save_error(purchase)
+    Rails.logger.error(
+      "[PurchasesController] save_failed " \
+      "purchase_errors=#{purchase.errors.full_messages.inspect} " \
+      "params_keys=#{params.to_unsafe_h.keys.inspect}"
+    )
   end
 
   def safe_return_path(path)

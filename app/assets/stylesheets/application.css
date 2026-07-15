@@ -1204,6 +1204,18 @@ pre {
   border-color: var(--primary);
 }
 
+.dropzone.is-invalid {
+  background: #fff7f6;
+  border-color: #ffb4ab;
+}
+
+.field-error {
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 700;
+  margin: -8px 0 0;
+}
+
 .dropzone-icon {
   color: #b7c0c3;
   font-size: 42px;
@@ -1323,6 +1335,15 @@ pre {
 
 .process-button:hover {
   background: #003b40;
+}
+
+.process-button:disabled {
+  background: #b7c0c3;
+  cursor: not-allowed;
+}
+
+.process-button:disabled:hover {
+  background: #b7c0c3;
 }
 
 .process-button .material-symbols-outlined {

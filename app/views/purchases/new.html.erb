@@ -33,6 +33,7 @@
         <span class="material-symbols-outlined dropzone-icon">upload_file</span>
         <strong data-file-label>Haga clic o arrastre su boleta aquí</strong>
       </label>
+      <p class="field-error" data-file-error hidden></p>
       <%= file_field_tag :receipt, id: "receipt-input", accept: "application/pdf,image/png,image/jpeg", class: "file-input", data: { file_input: true } %>
 
       <div class="mobile-camera-action">
@@ -73,9 +74,9 @@
         </div>
       </div>
 
-      <%= button_tag type: :submit, class: "process-button" do %>
+      <%= button_tag type: :submit, class: "process-button", disabled: true, data: { process_button: true } do %>
         <span class="material-symbols-outlined">bolt</span>
-        Procesar boleta
+        <span data-process-button-label>Procesar boleta</span>
       <% end %>
     <% end %>
   </section>
@@ -123,9 +124,12 @@
       const input = document.querySelector("[data-file-input]");
       const cameraInput = document.querySelector("[data-camera-input]");
       const label = document.querySelector("[data-file-label]");
+      const fileError = document.querySelector("[data-file-error]");
       const paper = document.querySelector(".receipt-paper");
       const form = document.querySelector("[data-processing-form]");
       const modal = document.querySelector("[data-loading-modal]");
+      const processButton = document.querySelector("[data-process-button]");
+      const processButtonLabel = document.querySelector("[data-process-button-label]");
 
       if (!dropzone || !input || !label || !paper) return;
       if (dropzone.dataset.uploadReady) return;
@@ -135,6 +139,62 @@
       const MAX_IMAGE_SIZE = 1.5 * 1024 * 1024;
       const MAX_IMAGE_DIMENSION = 1800;
       const JPEG_QUALITY = 0.85;
+      const MAX_FILE_SIZE = 10 * 1024 * 1024;
+      const ALLOWED_TYPES = ["application/pdf", "image/jpeg", "image/png"];
+      let selectedFileValid = false;
+      let preparingFile = false;
+
+      const setProcessButtonState = (enabled, text = "Procesar boleta") => {
+        if (processButton) processButton.disabled = !enabled;
+        if (processButtonLabel) processButtonLabel.textContent = text;
+      };
+
+      const showFileError = (message) => {
+        if (fileError) {
+          fileError.textContent = message;
+          fileError.hidden = false;
+        }
+        dropzone.classList.add("is-invalid");
+      };
+
+      const clearFileError = () => {
+        if (fileError) {
+          fileError.textContent = "";
+          fileError.hidden = true;
+        }
+        dropzone.classList.remove("is-invalid");
+      };
+
+      const resetPreview = () => {
+        if (paper.dataset.previewUrl) {
+          URL.revokeObjectURL(paper.dataset.previewUrl);
+          delete paper.dataset.previewUrl;
+        }
+
+        paper.innerHTML = `
+          <span class="material-symbols-outlined">receipt_long</span>
+          <strong data-preview-title>Vista previa de boleta</strong>
+          <small data-preview-subtitle>Selecciona un archivo para procesarlo.</small>
+        `;
+      };
+
+      const clearSelectedFile = () => {
+        selectedFileValid = false;
+        if (input) input.value = "";
+        if (cameraInput) cameraInput.value = "";
+        label.textContent = "Haga clic o arrastre su boleta aquí";
+        resetPreview();
+        setProcessButtonState(false);
+      };
+
+      const validationMessage = (file) => {
+        if (!file) return "Debes subir una boleta para continuar.";
+        const validExtension = /\.(pdf|jpe?g|png)$/i.test(file.name);
+        if (!ALLOWED_TYPES.includes(file.type) && !validExtension) return "El archivo debe ser PDF, JPG o PNG.";
+        if (file.size > MAX_FILE_SIZE) return "El archivo no puede superar los 10 MB.";
+
+        return null;
+      };
 
       const replaceInputFile = (targetInput, file) => {
         if (!targetInput || !file || typeof DataTransfer === "undefined") return;
@@ -188,10 +248,22 @@
       });
 
       const setFile = async (file, targetInput) => {
-        if (!file) return;
+        const message = validationMessage(file);
+        if (message) {
+          clearSelectedFile();
+          showFileError(message);
+          return;
+        }
+
+        clearFileError();
+        selectedFileValid = false;
+        preparingFile = true;
+        setProcessButtonState(false, "Preparando imagen...");
 
         const processedFile = await compressImage(file);
         replaceInputFile(targetInput, processedFile);
+        preparingFile = false;
+        selectedFileValid = true;
 
         label.textContent = processedFile === file ? processedFile.name : `${processedFile.name} (optimizada)`;
 
@@ -204,6 +276,7 @@
           const reader = new FileReader();
           reader.onload = (event) => {
             paper.innerHTML = `<img src="${event.target.result}" alt="Vista previa de boleta">`;
+            setProcessButtonState(true);
           };
           reader.readAsDataURL(processedFile);
           return;
@@ -213,6 +286,7 @@
           const previewUrl = URL.createObjectURL(processedFile);
           paper.dataset.previewUrl = previewUrl;
           paper.innerHTML = `<iframe src="${previewUrl}" title="Vista previa de boleta PDF"></iframe>`;
+          setProcessButtonState(true);
           return;
         }
 
@@ -221,6 +295,7 @@
           <strong>${processedFile.name}</strong>
           <small>El PDF se procesará al presionar Procesar boleta.</small>
         `;
+        setProcessButtonState(true);
       };
 
       dropzone.addEventListener("dragover", (event) => {
@@ -265,8 +340,22 @@
       }
 
       if (form && modal) {
-        form.addEventListener("submit", () => {
+        form.addEventListener("submit", (event) => {
+          if (preparingFile) {
+            event.preventDefault();
+            showFileError("Espera a que terminemos de preparar la imagen.");
+            return;
+          }
+
+          if (!selectedFileValid) {
+            event.preventDefault();
+            showFileError("Debes subir una boleta para continuar.");
+            setProcessButtonState(false);
+            return;
+          }
+
           modal.hidden = false;
+          setProcessButtonState(false, "Procesando...");
         });
       }
     });
@@ -285,6 +374,7 @@
 
       if (input) input.value = "";
       if (cameraInput) cameraInput.value = "";
+      if (fileError) fileError.hidden = true;
       if (paper?.dataset.previewUrl) {
         URL.revokeObjectURL(paper.dataset.previewUrl);
         delete paper.dataset.previewUrl;
