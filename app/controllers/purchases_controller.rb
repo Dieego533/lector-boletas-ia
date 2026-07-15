@@ -136,6 +136,7 @@ class PurchasesController < ApplicationController
       ai_provider_failed: "No se pudo procesar la boleta. Intenta nuevamente con otro método.",
       invalid_ai_response: "No pudimos estructurar la información. Intenta nuevamente con otro método.",
       not_receipt: "No pudimos identificar una boleta en el archivo. Intenta con otra imagen o selecciona otro método.",
+      prompt_unavailable: "Ocurrió un problema al procesar la boleta. Intenta nuevamente.",
       unsupported_engine: "El método de procesamiento seleccionado no está disponible."
     }.fetch(error_code&.to_sym, "Ocurrió un problema al procesar la boleta. Intenta nuevamente.")
   end

@@ -42,6 +42,7 @@ class ReceiptProcessor
   GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/%<model>s:generateContent".freeze
   GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions".freeze
   OCR_SPACE_ENDPOINT = "https://api.ocr.space/parse/image".freeze
+  PROMPT_PATH = Rails.root.join("config/prompts/receipt_extraction.txt").freeze
 
   def self.engine_options
     ENGINES.map { |value, config| [config[:label], value] }
@@ -332,29 +333,9 @@ class ReceiptProcessor
   end
 
   def prompt
-    <<~PROMPT
-      Extrae los datos principales de esta boleta de compra chilena.
-
-      Devuelve exclusivamente JSON valido con estas claves exactas:
-      merchant_name, merchant_rut, document_number, purchase_date, total_amount, tax_amount, items.
-
-      Reglas:
-      - Si un dato no esta disponible, usa null.
-      - No inventes informacion.
-      - purchase_date debe venir en formato YYYY-MM-DD.
-      - total_amount debe ser un numero, sin puntos de miles ni simbolos.
-      - tax_amount debe ser el monto de IVA si aparece en la boleta. Si no aparece, usa null.
-      - items debe ser un arreglo. Si no detectas productos, devuelve [].
-      - Cada item debe tener estas claves exactas: description, quantity, unit_price, discount_amount, total_price.
-      - description debe ser el nombre del producto o servicio, sin lineas de subtotal ni total.
-      - quantity debe ser numerica. Si no aparece cantidad, usa 1.
-      - unit_price debe ser el precio original unitario o de linea antes de descuentos, sin puntos de miles ni simbolos.
-      - discount_amount debe ser el descuento aplicado al producto como numero positivo. Si no hay descuento, usa 0.
-      - total_price debe ser el precio final del producto despues del descuento.
-      - Si una linea "*** Descuento" aparece debajo de un producto, asociala al item anterior en discount_amount.
-      - No agregues subtotales, totales, vuelto, forma de pago ni lineas de descuento como productos separados.
-      - No agregues claves adicionales.
-    PROMPT
+    File.read(PROMPT_PATH)
+  rescue Errno::ENOENT => error
+    raise ProcessingError.new(:prompt_unavailable, "No se encontró el archivo de instrucciones: #{error.message}")
   end
 
   def parse_response(response)
