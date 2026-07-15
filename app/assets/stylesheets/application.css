@@ -9,6 +9,8 @@
  * Consider organizing styles into separate files for maintainability.
  */
 
+/* ---------- Variables y estilos base ---------- */
+
 :root {
   --background: #f7f9fb;
   --border: #dfe4e7;
@@ -35,6 +37,10 @@ body {
   font-family: var(--sans);
   line-height: 1.5;
 }
+
+/* ---------- Fin variables y estilos base ---------- */
+
+/* ---------- Pantalla de acceso ---------- */
 
 .access-lock-body {
   background-color: #f3f6f7;
@@ -159,6 +165,10 @@ body {
   text-align: left;
   width: 100%;
 }
+
+/* ---------- Fin pantalla de acceso ---------- */
+
+/* ---------- Layout y componentes globales ---------- */
 
 a {
   color: var(--primary);
@@ -365,6 +375,10 @@ select {
   background: #eef6f7;
 }
 
+/* ---------- Fin layout y componentes globales ---------- */
+
+/* ---------- Estilos dashboard y listado ---------- */
+
 .table-card {
   background: var(--card);
   border: 1px solid var(--border);
@@ -526,6 +540,10 @@ select {
   font-weight: 700;
   padding: 4px 9px;
 }
+
+/* ---------- Fin estilos dashboard y listado ---------- */
+
+/* ---------- Estilos detalle de compra ---------- */
 
 .details-grid {
   display: grid;
@@ -1047,6 +1065,10 @@ pre {
   margin-top: 22px;
 }
 
+/* ---------- Fin estilos detalle de compra ---------- */
+
+/* ---------- Estilos edición de compra ---------- */
+
 .edit-purchase-header {
   margin: 0 auto 22px;
   max-width: 760px;
@@ -1156,6 +1178,10 @@ pre {
   padding-left: 18px;
 }
 
+/* ---------- Fin estilos edición de compra ---------- */
+
+/* ---------- Estados vacíos, paginación y navegación ---------- */
+
 .empty-state {
   background: var(--card);
   border: 1px dashed var(--border);
@@ -1236,6 +1262,10 @@ pre {
 .back-link:hover .material-symbols-outlined {
   transform: translateX(-4px);
 }
+
+/* ---------- Fin estados vacíos, paginación y navegación ---------- */
+
+/* ---------- Estilos subida de boleta ---------- */
 
 .upload-header {
   margin-bottom: 28px;
@@ -1554,6 +1584,10 @@ pre {
   width: 100%;
 }
 
+/* ---------- Fin estilos subida de boleta ---------- */
+
+/* ---------- Modal de procesamiento ---------- */
+
 .loading-modal[hidden] {
   display: none;
 }
@@ -1641,6 +1675,10 @@ pre {
     transform: translateX(310%);
   }
 }
+
+/* ---------- Fin modal de procesamiento ---------- */
+
+/* ---------- Modal de compra guardada ---------- */
 
 .success-overlay {
   align-items: center;
@@ -1754,6 +1792,10 @@ pre {
 .success-secondary-button .material-symbols-outlined {
   font-size: 20px;
 }
+
+/* ---------- Fin modal de compra guardada ---------- */
+
+/* ---------- Estilos revisión antes de guardar ---------- */
 
 @keyframes loading-pulse {
   0%, 100% {
@@ -2051,6 +2093,10 @@ pre {
   min-width: 180px;
 }
 
+/* ---------- Fin estilos revisión antes de guardar ---------- */
+
+/* ---------- Estilos responsivos ---------- */
+
 @media (max-width: 760px) {
   .access-lock-screen {
     align-items: flex-start;
@@ -2200,3 +2246,5 @@ pre {
     flex-direction: column;
   }
 }
+
+/* ---------- Fin estilos responsivos ---------- */
