@@ -49,7 +49,7 @@
               <td class="mono-cell rut-cell"><%= purchase.merchant_rut.presence || "Sin RUT" %></td>
               <td class="muted-cell text-center"><%= purchase.purchase_date.present? ? purchase.purchase_date.strftime("%d-%m-%y") : "Sin fecha" %></td>
               <td class="amount-cell text-right"><%= purchase.total_amount.present? ? number_to_currency(purchase.total_amount, unit: "$", precision: 0, delimiter: ".", separator: ",") : "Sin total" %></td>
-              <td class="muted-cell text-center"><%= purchase.created_at.strftime("%d-%m-%y") %></td>
+              <td class="muted-cell text-center"><%= purchase.created_at.in_time_zone.strftime("%d-%m-%y") %></td>
               <td>
                 <div class="row-actions">
                   <%= link_to purchase_path(purchase), data: { turbo_frame: "_top" } do %>

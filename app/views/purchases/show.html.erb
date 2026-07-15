@@ -61,7 +61,7 @@
 
       <div class="ai-fact">
         <span>Fecha de registro</span>
-        <strong><%= @purchase.created_at.strftime("%d-%m-%Y %H:%M") %></strong>
+        <strong><%= @purchase.created_at.in_time_zone.strftime("%d-%m-%Y %H:%M") %></strong>
       </div>
 
       <% if @purchase.processing_error.present? %>
