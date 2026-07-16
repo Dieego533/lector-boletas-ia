@@ -283,14 +283,6 @@ input[type="submit"]:hover {
   background: var(--primary-dark);
 }
 
-.button-danger {
-  background: var(--danger);
-}
-
-.button-danger:hover {
-  background: #b42318;
-}
-
 .link-button {
   background: none;
   border: 0;
@@ -388,6 +380,60 @@ input.field-error-input,
 
 .button-secondary:hover {
   background: #eef6f7;
+}
+
+.button-danger {
+  background: var(--danger);
+  color: #ffffff;
+}
+
+.button-danger:hover {
+  background: #8f1111;
+}
+
+.confirm-modal[hidden] {
+  display: none;
+}
+
+.confirm-modal {
+  align-items: center;
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 20px;
+  position: fixed;
+  z-index: 1000;
+}
+
+.confirm-modal-backdrop {
+  background: rgba(9, 23, 25, 0.48);
+  inset: 0;
+  position: absolute;
+}
+
+.confirm-modal-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
+  display: grid;
+  gap: 16px;
+  max-width: 420px;
+  padding: 24px;
+  position: relative;
+  text-align: center;
+  width: 100%;
+}
+
+.confirm-modal-card h2 {
+  font-size: 22px;
+  margin: 0;
+}
+
+.confirm-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
 }
 
 /* ---------- Fin layout y componentes globales ---------- */

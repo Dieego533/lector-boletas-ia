@@ -20,7 +20,7 @@
       Editar
     <% end %>
 
-    <%= button_to purchase_path(@purchase), method: :delete, form: { data: { turbo_confirm: "¿Eliminar esta compra?" } }, class: "detail-action-button danger" do %>
+    <%= button_to purchase_path(@purchase), method: :delete, form: { data: { delete_confirm: "¿Eliminar esta compra?" } }, class: "detail-action-button danger" do %>
       <span class="material-symbols-outlined">delete</span>
       Eliminar
     <% end %>

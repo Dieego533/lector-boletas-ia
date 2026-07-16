@@ -40,5 +40,18 @@
     <main class="container">
       <%= yield %>
     </main>
+
+    <div class="confirm-modal" data-delete-confirm-modal hidden>
+      <div class="confirm-modal-backdrop" data-delete-confirm-cancel></div>
+      <section class="confirm-modal-card" role="dialog" aria-modal="true" aria-labelledby="delete-confirm-title">
+        <div>
+          <h2 id="delete-confirm-title">¿Eliminar este registro?</h2>
+        </div>
+        <div class="confirm-modal-actions">
+          <button type="button" class="button button-secondary" data-delete-confirm-cancel data-delete-confirm-cancel-button>Cancelar</button>
+          <button type="button" class="button button-danger" data-delete-confirm-accept>Eliminar</button>
+        </div>
+      </section>
+    </div>
   </body>
 </html>

@@ -58,7 +58,7 @@
                   <%= link_to edit_purchase_path(purchase, return_to: request.fullpath), data: { turbo_frame: "_top" } do %>
                     <span class="material-symbols-outlined">edit</span>
                   <% end %>
-                  <%= button_to purchase_path(purchase), method: :delete, form: { data: { turbo_confirm: "¿Eliminar esta compra?", turbo_frame: "_top" } }, class: "link-button" do %>
+                  <%= button_to purchase_path(purchase), method: :delete, form: { data: { delete_confirm: "¿Eliminar esta compra?", turbo_frame: "_top" } }, class: "link-button" do %>
                     <span class="material-symbols-outlined">delete</span>
                   <% end %>
                 </div>
