@@ -130,7 +130,9 @@ class PurchasesController < ApplicationController
   def processing_error_message(error_code, detail = nil)
     if error_code&.to_sym == :not_receipt && detail.present?
       detail = user_facing_not_receipt_detail(detail)
-      return "No pudimos identificar una boleta, factura o comprobante de compra. #{detail}. Intenta nuevamente con un archivo válido."
+      message = "No pudimos identificar una boleta, factura o comprobante de compra."
+      message = "#{message} #{detail}" if detail.present?
+      return "#{message} Intenta nuevamente con un archivo válido."
     end
 
     {
@@ -139,6 +141,7 @@ class PurchasesController < ApplicationController
       file_too_large: "El archivo no puede superar los 10 MB.",
       ocr_failed: "No pudimos leer correctamente el archivo. Intenta nuevamente con una imagen más clara o selecciona otro método.",
       ai_provider_failed: "No pudimos procesar el archivo. Intenta nuevamente con otro método.",
+      rate_limited: "El servicio de IA alcanzó un límite de uso. Intenta nuevamente más tarde o selecciona otro método de procesamiento.",
       invalid_ai_response: "No pudimos estructurar la información del documento. Intenta nuevamente con otro método.",
       not_receipt: "No pudimos identificar una boleta en el archivo. Intenta con otra imagen o selecciona otro método.",
       prompt_unavailable: "Ocurrió un problema al procesar la boleta. Intenta nuevamente.",
@@ -154,7 +157,7 @@ class PurchasesController < ApplicationController
     technical_terms = /\b(?:IA|OCR|OCR\.space|Gemini|Groq|HTTP|JSON|proveedor|provider|modelo|model)\b|datos mínimos|texto suficiente|señales suficientes/i
     return "" if detail.match?(technical_terms)
 
-    "#{detail} "
+    detail.squish
   end
 
   def log_save_error(purchase)

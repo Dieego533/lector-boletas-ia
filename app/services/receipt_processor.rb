@@ -193,7 +193,7 @@ class ReceiptProcessor
     uri.query = URI.encode_www_form(key: ENV.fetch("GEMINI_API_KEY"))
 
     response = post_json(uri, gemini_payload)
-    raise ProcessingError.new(:ai_provider_failed, "Gemini respondió HTTP #{response.code}: #{response.body}") unless response.is_a?(Net::HTTPSuccess)
+    raise_ai_provider_error("Gemini", response) unless response.is_a?(Net::HTTPSuccess)
 
     JSON.parse(response.body)
   rescue JSON::ParserError => error
@@ -215,7 +215,7 @@ class ReceiptProcessor
     request.body = JSON.generate(groq_text_payload(text))
 
     response = perform_request(uri, request)
-    raise ProcessingError.new(:ai_provider_failed, "Groq respondió HTTP #{response.code}: #{response.body}") unless response.is_a?(Net::HTTPSuccess)
+    raise_ai_provider_error("Groq", response) unless response.is_a?(Net::HTTPSuccess)
 
     JSON.parse(response.body)
   rescue JSON::ParserError => error
@@ -282,6 +282,13 @@ class ReceiptProcessor
     http.use_ssl = true
     http.read_timeout = 60
     http.request(request)
+  end
+
+  def raise_ai_provider_error(provider_label, response)
+    message = "#{provider_label} respondió HTTP #{response.code}: #{response.body}"
+    error_code = response.code.to_i == 429 ? :rate_limited : :ai_provider_failed
+
+    raise ProcessingError.new(error_code, message)
   end
 
   def gemini_payload

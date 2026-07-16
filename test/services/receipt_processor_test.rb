@@ -55,6 +55,16 @@ class ReceiptProcessorTest < ActiveSupport::TestCase
     assert_equal "bank_transfer", data["document_type"]
   end
 
+  test "maps ai provider http 429 to rate limited" do
+    response = Struct.new(:code, :body).new("429", "Too Many Requests")
+
+    error = assert_raises(ReceiptProcessor::ProcessingError) do
+      processor.send(:raise_ai_provider_error, "Gemini", response)
+    end
+
+    assert_equal :rate_limited, error.code
+  end
+
   private
 
   def processor

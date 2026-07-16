@@ -36,4 +36,13 @@ class PurchasesControllerTest < ActionDispatch::IntegrationTest
     )
     assert_not_includes message, "OCR"
   end
+
+  test "rate limited message is user friendly" do
+    message = PurchasesController.new.send(:processing_error_message, :rate_limited)
+
+    assert_equal(
+      "El servicio de IA alcanzó un límite de uso. Intenta nuevamente más tarde o selecciona otro método de procesamiento.",
+      message
+    )
+  end
 end
