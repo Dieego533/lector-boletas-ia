@@ -364,17 +364,22 @@
       const dropzone = document.querySelector("[data-dropzone]");
       const input = document.querySelector("[data-file-input]");
       const cameraInput = document.querySelector("[data-camera-input]");
+      const fileError = document.querySelector("[data-file-error]");
       const paper = document.querySelector(".receipt-paper");
       const modal = document.querySelector("[data-loading-modal]");
 
       if (dropzone) {
         dropzone.classList.remove("is-dragging");
+        dropzone.classList.remove("is-invalid");
         delete dropzone.dataset.uploadReady;
       }
 
       if (input) input.value = "";
       if (cameraInput) cameraInput.value = "";
-      if (fileError) fileError.hidden = true;
+      if (fileError) {
+        fileError.textContent = "";
+        fileError.hidden = true;
+      }
       if (paper?.dataset.previewUrl) {
         URL.revokeObjectURL(paper.dataset.previewUrl);
         delete paper.dataset.previewUrl;

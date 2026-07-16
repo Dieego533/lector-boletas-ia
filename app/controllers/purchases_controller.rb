@@ -130,16 +130,16 @@ class PurchasesController < ApplicationController
   def processing_error_message(error_code, detail = nil)
     if error_code&.to_sym == :not_receipt && detail.present?
       detail = user_facing_not_receipt_detail(detail)
-      return "No pudimos identificar una boleta, factura o comprobante de compra. #{detail}Intenta nuevamente con un archivo válido."
+      return "No pudimos identificar una boleta, factura o comprobante de compra. #{detail}. Intenta nuevamente con un archivo válido."
     end
 
     {
       missing_file: "Debes subir una boleta para continuar.",
       unsupported_file_type: "El archivo debe ser PDF, JPG o PNG.",
       file_too_large: "El archivo no puede superar los 10 MB.",
-      ocr_failed: "No pudimos leer la boleta. Intenta nuevamente con otro método.",
-      ai_provider_failed: "No se pudo procesar la boleta. Intenta nuevamente con otro método.",
-      invalid_ai_response: "No pudimos estructurar la información. Intenta nuevamente con otro método.",
+      ocr_failed: "No pudimos leer correctamente el archivo. Intenta nuevamente con una imagen más clara o selecciona otro método.",
+      ai_provider_failed: "No pudimos procesar el archivo. Intenta nuevamente con otro método.",
+      invalid_ai_response: "No pudimos estructurar la información del documento. Intenta nuevamente con otro método.",
       not_receipt: "No pudimos identificar una boleta en el archivo. Intenta con otra imagen o selecciona otro método.",
       prompt_unavailable: "Ocurrió un problema al procesar la boleta. Intenta nuevamente.",
       unsupported_engine: "El método de procesamiento seleccionado no está disponible."
@@ -151,7 +151,8 @@ class PurchasesController < ApplicationController
   end
 
   def user_facing_not_receipt_detail(detail)
-    return "" if detail.match?(/\bIA\b|datos mínimos/i)
+    technical_terms = /\b(?:IA|OCR|OCR\.space|Gemini|Groq|HTTP|JSON|proveedor|provider|modelo|model)\b|datos mínimos|texto suficiente|señales suficientes/i
+    return "" if detail.match?(technical_terms)
 
     "#{detail} "
   end

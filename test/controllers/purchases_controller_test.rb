@@ -18,12 +18,22 @@ class PurchasesControllerTest < ActionDispatch::IntegrationTest
     message = PurchasesController.new.send(
       :processing_error_message,
       :not_receipt,
-      "La IA no devolvió datos mínimos de una boleta."
+      "OCR.space no detecto señales suficientes de boleta."
     )
 
     assert_equal(
       "No pudimos identificar una boleta, factura o comprobante de compra. Intenta nuevamente con un archivo válido.",
       message
     )
+  end
+
+  test "ocr failed message does not expose provider details" do
+    message = PurchasesController.new.send(:processing_error_message, :ocr_failed)
+
+    assert_equal(
+      "No pudimos leer correctamente el archivo. Intenta nuevamente con una imagen más clara o selecciona otro método.",
+      message
+    )
+    assert_not_includes message, "OCR"
   end
 end

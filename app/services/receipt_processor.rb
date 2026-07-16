@@ -178,7 +178,6 @@ class ReceiptProcessor
 
     @raw_text = extract_text_with_ocr_space
     raise ProcessingError.new(:ocr_failed, "OCR.space no detecto texto suficiente.") if raw_text.blank? || raw_text.length < 20
-    raise ProcessingError.new(:not_receipt, "OCR.space no detecto señales suficientes de boleta.") unless receipt_like_text?(raw_text)
 
     @resolved_engine = complex_receipt_text?(raw_text) ? "vision" : "ocr_text"
 
@@ -241,22 +240,6 @@ class ReceiptProcessor
     long_code_lines = lines.count { |line| line.match?(/\b\d{8,}\b/) }
 
     numeric_heavy_lines >= 2 || long_code_lines >= 2
-  end
-
-  def receipt_like_text?(text)
-    normalized_text = I18n.transliterate(text.to_s).downcase
-    return false if normalized_text.blank?
-
-    amount_present = normalized_text.match?(/\$\s*\d{1,3}(?:[\.,]\d{3})+/) ||
-      normalized_text.match?(/\b(?:total|iva|neto|subtotal|precio|monto)\b[^\n\d]{0,20}\d{3,}/) ||
-      normalized_text.match?(/\b\d{1,3}(?:[\.,]\d{3})+\b/)
-
-    receipt_signals = %w[
-      boleta factura ticket comprobante rut total iva neto subtotal vendedor caja fecha cantidad precio detalle producto comercio monto
-    ]
-    signal_count = receipt_signals.count { |signal| normalized_text.include?(signal) }
-
-    amount_present && signal_count >= 2
   end
 
   def extract_text_with_ocr_space
