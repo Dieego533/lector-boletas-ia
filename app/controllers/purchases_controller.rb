@@ -38,7 +38,7 @@ class PurchasesController < ApplicationController
 
     unless result.success?
       @purchase = Purchase.new
-      @processing_error = processing_error_message(result.error_code)
+      @processing_error = processing_error_message(result.error_code, result.processing_error)
       render :new, status: :unprocessable_entity
       return
     end
@@ -127,7 +127,12 @@ class PurchasesController < ApplicationController
     params[:ai_engine]
   end
 
-  def processing_error_message(error_code)
+  def processing_error_message(error_code, detail = nil)
+    if error_code&.to_sym == :not_receipt && detail.present?
+      detail = user_facing_not_receipt_detail(detail)
+      return "No pudimos identificar una boleta, factura o comprobante de compra. #{detail}Intenta nuevamente con un archivo válido."
+    end
+
     {
       missing_file: "Debes subir una boleta para continuar.",
       unsupported_file_type: "El archivo debe ser PDF, JPG o PNG.",
@@ -143,6 +148,12 @@ class PurchasesController < ApplicationController
 
   def save_error_message
     "No se pudo guardar la compra. Revisa los campos e intenta nuevamente."
+  end
+
+  def user_facing_not_receipt_detail(detail)
+    return "" if detail.match?(/\bIA\b|datos mínimos/i)
+
+    "#{detail} "
   end
 
   def log_save_error(purchase)

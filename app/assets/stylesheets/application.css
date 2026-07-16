@@ -367,6 +367,19 @@ select {
   width: 100%;
 }
 
+input.field-error-input,
+.field_with_errors input[type="text"],
+.field_with_errors input[type="number"],
+.field_with_errors input[type="date"] {
+  background: #fff7f6;
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.12);
+}
+
+.field_with_errors {
+  display: contents;
+}
+
 .button-secondary {
   background: transparent;
   border: 1px solid var(--primary);
@@ -1178,6 +1191,24 @@ pre {
 .form-errors ul {
   margin: 0;
   padding-left: 18px;
+}
+
+.items-total-warning {
+  align-items: flex-start;
+  background: #fff8e6;
+  border-bottom: 1px solid #f5d58a;
+  color: #8a5a00;
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+}
+
+.items-total-warning .material-symbols-outlined {
+  font-size: 22px;
+}
+
+.items-total-warning p {
+  margin: 0;
 }
 
 /* ---------- Fin estilos edición de compra ---------- */

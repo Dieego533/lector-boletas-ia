@@ -1,0 +1,14 @@
+<% if purchase.items_total_mismatch? %>
+  <div class="items-total-warning">
+    <span class="material-symbols-outlined">warning</span>
+    <p>
+      La suma de los productos
+      <strong><%= number_to_currency(purchase.items_total_amount, unit: "$", precision: 0, delimiter: ".", separator: ",") %></strong>
+      no coincide con el total
+      <strong><%= number_to_currency(purchase.total_amount, unit: "$", precision: 0, delimiter: ".", separator: ",") %></strong>.
+      Diferencia:
+      <strong><%= number_to_currency(purchase.items_total_difference.abs, unit: "$", precision: 0, delimiter: ".", separator: ",") %></strong>.
+      Puedes corregir el desglose o guardar de todas formas.
+    </p>
+  </div>
+<% end %>

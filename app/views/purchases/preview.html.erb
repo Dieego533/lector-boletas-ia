@@ -53,6 +53,8 @@
   </section>
 
   <section class="review-form-card">
+    <% field_error_class = ->(field) { "field-error-input" if @purchase.errors[field].any? } %>
+
     <%= form_with model: @purchase, url: purchases_path, class: "review-form" do |form| %>
       <%= form.hidden_field :raw_text, value: @raw_text %>
       <%= form.hidden_field :processing_error, value: @processing_error %>
@@ -67,33 +69,33 @@
 
       <div class="review-fields">
         <div class="field-full">
-          <%= form.label :merchant_name, "Comercio" %>
-          <%= form.text_field :merchant_name, placeholder: "Nombre del comercio" %>
+          <%= form.label :merchant_name, "Comercio o RUT comercio *" %>
+          <%= form.text_field :merchant_name, class: field_error_class.call(:merchant_name) %>
         </div>
 
         <div>
           <%= form.label :merchant_rut, "RUT comercio" %>
-          <%= form.text_field :merchant_rut, placeholder: "76.123.456-7" %>
+          <%= form.text_field :merchant_rut, class: field_error_class.call(:merchant_rut) %>
         </div>
 
         <div>
-          <%= form.label :document_number, "N° documento" %>
-          <%= form.text_field :document_number, placeholder: "Ej: 123456" %>
+          <%= form.label :document_number, "N° documento *" %>
+          <%= form.text_field :document_number, class: field_error_class.call(:document_number) %>
         </div>
 
         <div>
-          <%= form.label :purchase_date, "Fecha de compra" %>
-          <%= form.date_field :purchase_date %>
+          <%= form.label :purchase_date, "Fecha de compra *" %>
+          <%= form.date_field :purchase_date, class: field_error_class.call(:purchase_date) %>
         </div>
 
         <div>
-          <%= form.label :total_amount, "Total" %>
-          <%= form.number_field :total_amount, step: 1, min: 0, placeholder: "0", value: @purchase.total_amount.present? ? @purchase.total_amount.to_i : @purchase.total_amount %>
+          <%= form.label :total_amount, "Total *" %>
+          <%= form.number_field :total_amount, step: 1, min: 1, class: field_error_class.call(:total_amount), value: @purchase.total_amount.present? ? @purchase.total_amount.to_i : @purchase.total_amount %>
         </div>
 
         <div>
           <%= form.label :tax_amount, "IVA" %>
-          <%= form.number_field :tax_amount, step: 1, min: 0, placeholder: "0", value: @purchase.tax_amount.present? ? @purchase.tax_amount.to_i : @purchase.tax_amount %>
+          <%= form.number_field :tax_amount, step: 1, min: 0, class: field_error_class.call(:tax_amount), value: @purchase.tax_amount.present? ? @purchase.tax_amount.to_i : @purchase.tax_amount %>
         </div>
       </div>
 
@@ -109,6 +111,7 @@
           </button>
         </div>
 
+        <%= render "purchases/items_total_warning", purchase: @purchase %>
         <%= render "purchases/items_fields", form: form %>
       </div>
 

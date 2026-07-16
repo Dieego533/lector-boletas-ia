@@ -1,21 +1,105 @@
-Extrae los datos principales de esta boleta de compra chilena.
+Extrae los datos principales de una compra chilena desde el documento adjunto.
 
 Devuelve exclusivamente JSON valido con estas claves exactas:
-merchant_name, merchant_rut, document_number, purchase_date, total_amount, tax_amount, items.
+document_type, is_purchase_receipt, confidence, rejection_reason, merchant_name, merchant_rut, document_number, purchase_date, total_amount, tax_amount, items.
 
-Reglas:
-- Si un dato no esta disponible, usa null.
+No agregues claves adicionales.
+
+Etapa 1: clasificacion del documento
+
+- Primero determina que tipo de documento estas observando. En esta etapa solo debes decidir document_type, is_purchase_receipt, confidence y rejection_reason.
+- document_type debe ser exactamente uno de estos valores:
+  - receipt
+  - invoice
+  - ticket
+  - payment_voucher
+  - card_receipt
+  - bank_receipt
+  - bank_transfer
+  - bank_deposit
+  - insurance_reimbursement
+  - quote
+  - medical_order
+  - account_statement
+  - certificate
+  - benefits_document
+  - unknown
+- Documentos aceptados como compra: receipt, invoice, ticket, payment_voucher, card_receipt, bank_receipt.
+- is_purchase_receipt debe ser true solo para boletas, facturas, tickets, comprobantes de compra/venta, vouchers de Transbank, comprobantes de pago con tarjeta o comprobantes bancarios que parezcan corresponder al pago de una compra.
+- is_purchase_receipt debe ser false para reembolsos, seguros, liquidaciones, cotizaciones, presupuestos, recetas, ordenes medicas, estados de cuenta, transferencias entre cuentas, depositos bancarios, certificados, tablas informativas o documentos de beneficios.
+- Un comprobante de transferencia entre cuentas, aunque tenga monto, fecha, RUT, destinatario y numero de operacion, no es comprobante de compra. Usa document_type bank_transfer y rejection_reason "El documento parece corresponder a un comprobante de transferencia bancaria."
+- Si el documento no corresponde claramente a ningun valor permitido, usa document_type unknown.
+- rejection_reason debe ser null si is_purchase_receipt es true. Si is_purchase_receipt es false, explica brevemente por que no corresponde a una compra.
+
+Confidence
+
+- confidence debe ser un numero entre 0 y 1 y debe representar solo tu certeza sobre la clasificacion del documento: document_type e is_purchase_receipt.
+- No bajes confidence porque falten campos opcionales como RUT, IVA o detalle de productos.
+- Usa esta escala:
+  - 0.95 a 1.00: el tipo de documento es evidente y claramente identificable.
+  - 0.80 a 0.94: alta confianza, aunque algunos elementos sean parcialmente ilegibles o ambiguos.
+  - 0.50 a 0.79: baja calidad, informacion incompleta o dudas razonables sobre la clasificacion.
+  - menor a 0.50: no es posible determinar con suficiente certeza el tipo de documento.
+
+Etapa 2: extraccion de datos
+
+- Solo si is_purchase_receipt es true, extrae comercio, RUT, fecha, numero de documento, montos, IVA y productos.
+- Si is_purchase_receipt es false, no interpretes el contenido como compra: merchant_name, merchant_rut, document_number, purchase_date, total_amount y tax_amount deben ser null, e items debe ser [].
+- Si un dato no esta disponible o no puede determinarse con suficiente certeza, usa null.
 - No inventes informacion.
+- No completes datos usando contexto externo.
+- Prioriza siempre la informacion visible en el documento.
+
+Reglas para OCR imperfecto
+
+- Si existen varios candidatos para un mismo dato, selecciona el que sea mas consistente con el resto del documento.
+- Ignora errores evidentes producidos por OCR cuando el significado sea claro.
+- No corrijas automaticamente valores ambiguos.
+- No infieras montos, fechas, RUT o productos si no aparecen explicitamente.
+
+Reglas para varias imagenes/documentos en una misma foto
+
+- Procesa solo el documento principal, entendido como el de mayor tamano o el que ocupa la mayor parte de la imagen.
+- Ignora documentos secundarios.
+- No combines informacion de distintos documentos.
+- Si no puedes identificar un documento principal, usa document_type unknown, is_purchase_receipt false, confidence baja y los campos de compra en null.
+
+Fecha de compra
+
 - purchase_date debe venir en formato YYYY-MM-DD.
-- total_amount debe ser un numero, sin puntos de miles ni simbolos.
-- tax_amount debe ser el monto de IVA si aparece en la boleta. Si no aparece, usa null.
-- items debe ser un arreglo. Si no detectas productos, devuelve [].
+- Usa la fecha de emision o compra del documento.
+- Si existen fecha de emision y fecha de compra y difieren, usa la fecha de compra.
+- En vouchers o comprobantes de pago, usa la fecha de la transaccion.
+- No uses fechas de vencimiento, impresion, procesamiento o autorizacion si existe una fecha de compra o transaccion.
+- Si no puede determinarse con certeza, devuelve null.
+
+Numero de documento
+
+- document_number debe identificar el documento principal.
+- En boletas y facturas, usa el folio o numero oficial del documento.
+- En tickets, usa el numero de ticket o folio si aparece.
+- En vouchers de Transbank o comprobantes de pago, usa el numero de operacion, autorizacion, comprobante o transaccion, priorizando el identificador principal visible.
+- En transferencias u otros documentos rechazados, no uses numero de operacion como document_number porque el documento no sera tratado como compra; devuelve null.
+- Si hay varios numeros candidatos, selecciona el que identifique mas directamente al documento y no numeros internos de terminal, caja, POS o sucursal, salvo que sea el unico identificador disponible.
+- Si no existe un identificador claro, devuelve null.
+
+Montos
+
+- total_amount debe ser el total final de la compra, como numero, sin puntos de miles ni simbolos.
+- No uses vuelto, propina, monto de cuota, monto reclamado, reembolso, deducible, cobertura, saldo, transferencia generica o monto de beneficio como total de compra.
+- tax_amount debe ser el monto de IVA si aparece. Si no aparece, usa null.
+- El IVA es un desglose del total, no un monto adicional al total.
+
+Items
+
+- items debe ser un arreglo. Si no detectas productos o servicios reales, devuelve [].
 - Cada item debe tener estas claves exactas: description, quantity, unit_price, discount_amount, total_price.
-- description debe ser el nombre del producto o servicio, sin lineas de subtotal ni total.
+- description debe ser el nombre del producto o servicio real.
+- No agregues lineas de resumen tributario como productos: Compra, Neto, Monto neto, Afecto, Exento, IVA, IVA 19%, Subtotal o Total.
+- Si la boleta solo muestra Compra/Neto + IVA + Total, y no muestra productos reales, devuelve items como [].
 - quantity debe ser numerica. Si no aparece cantidad, usa 1.
 - unit_price debe ser el precio original unitario o de linea antes de descuentos, sin puntos de miles ni simbolos.
 - discount_amount debe ser el descuento aplicado al producto como numero positivo. Si no hay descuento, usa 0.
 - total_price debe ser el precio final del producto despues del descuento.
 - Si una linea "*** Descuento" aparece debajo de un producto, asociala al item anterior en discount_amount.
 - No agregues subtotales, totales, vuelto, forma de pago ni lineas de descuento como productos separados.
-- No agregues claves adicionales.

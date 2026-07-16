@@ -39,6 +39,12 @@ class ReceiptProcessor
     }
   }.freeze
 
+  DOCUMENT_TYPES = %w[
+    receipt invoice ticket payment_voucher card_receipt bank_receipt bank_transfer bank_deposit
+    insurance_reimbursement quote medical_order account_statement certificate benefits_document unknown
+  ].freeze
+  PURCHASE_SUPPORT_DOCUMENT_TYPES = %w[payment_voucher card_receipt bank_receipt].freeze
+
   GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/%<model>s:generateContent".freeze
   GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions".freeze
   OCR_SPACE_ENDPOINT = "https://api.ocr.space/parse/image".freeze
@@ -347,9 +353,22 @@ class ReceiptProcessor
 
     raise ProcessingError.new(:invalid_ai_response, "#{provider_name} no devolvio texto procesable") if text.blank?
 
-    JSON.parse(clean_json_text(text))
+    normalize_extracted_data(JSON.parse(clean_json_text(text)))
   rescue JSON::ParserError => error
     raise ProcessingError.new(:invalid_ai_response, "#{provider_name} devolvió JSON inválido: #{error.message}")
+  end
+
+  def normalize_extracted_data(data)
+    return data unless data.is_a?(Hash)
+
+    data.merge("document_type" => normalize_document_type(data["document_type"]))
+  end
+
+  def normalize_document_type(document_type)
+    normalized_type = document_type.to_s.parameterize(separator: "_")
+    return normalized_type if DOCUMENT_TYPES.include?(normalized_type)
+
+    "unknown"
   end
 
   def clean_json_text(text)
@@ -387,6 +406,8 @@ class ReceiptProcessor
   end
 
   def validate_receipt_data!(data)
+    validate_purchase_receipt_classification!(data)
+
     total_amount = decimal_or_nil(data["total_amount"])
     tax_amount = decimal_or_nil(data["tax_amount"])
     items = Array(data["items"]).select { |item| item.is_a?(Hash) && item["description"].to_s.squish.present? }
@@ -400,7 +421,17 @@ class ReceiptProcessor
     return if total_amount.present? && (identity_fields.any? || tax_amount.present? || items.any?)
     return if items.any? && (total_amount.present? || tax_amount.present? || identity_fields.any?)
 
-    raise ProcessingError.new(:not_receipt, "La IA no devolvió datos mínimos de una boleta.")
+    raise ProcessingError.new(:not_receipt, "El archivo no contiene datos suficientes de una compra.")
+  end
+
+  def validate_purchase_receipt_classification!(data)
+    return if ActiveModel::Type::Boolean.new.cast(data["is_purchase_receipt"])
+
+    document_type = normalize_document_type(data["document_type"])
+    return if PURCHASE_SUPPORT_DOCUMENT_TYPES.include?(document_type)
+
+    rejection_reason = data["rejection_reason"].presence || "El documento no corresponde a una boleta, factura, ticket o comprobante de compra."
+    raise ProcessingError.new(:not_receipt, rejection_reason)
   end
 
   def item_attributes_from(items)
