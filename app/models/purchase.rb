@@ -5,6 +5,7 @@ class Purchase < ApplicationRecord
 
   accepts_nested_attributes_for :purchase_items, allow_destroy: true, reject_if: :reject_purchase_item?
 
+  # Campos mínimos para evitar guardar compras vacías.
   validates :document_number, presence: { message: "es obligatorio" }
   validates :purchase_date, presence: { message: "es obligatoria" }
   validates :total_amount, presence: { message: "es obligatorio" }, numericality: { greater_than: 0, allow_nil: true }
@@ -53,6 +54,7 @@ class Purchase < ApplicationRecord
     total_amount - items_total_amount
   end
 
+  # Advierte si el desglose de productos no coincide con el total.
   def items_total_mismatch?
     return false if total_amount.blank? || items_total_amount.zero?
     return false if items_total_difference_explained_by_tax?

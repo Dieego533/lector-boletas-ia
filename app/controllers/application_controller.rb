@@ -7,10 +7,12 @@ class ApplicationController < ActionController::Base
   # Changes to the importmap will invalidate the etag for HTML responses
   stale_when_importmap_changes
 
+  # Protege la demo con una clave compartida cuando está habilitado por ENV.
   before_action :require_app_access!
 
   private
 
+  # Redirige a la pantalla de acceso si la app está protegida.
   def require_app_access!
     return unless access_lock_enabled?
     return if app_access_unlocked?

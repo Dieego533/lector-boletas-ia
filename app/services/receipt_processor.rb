@@ -63,6 +63,7 @@ class ReceiptProcessor
     @engine = engine.presence || self.class.default_engine
   end
 
+  # Flujo principal: valida el archivo, procesa con IA/OCR y devuelve datos para el formulario.
   def call
     validate_uploaded_file!
 
@@ -170,6 +171,7 @@ class ReceiptProcessor
     end
   end
 
+  # Decide automáticamente si conviene usar OCR + texto o análisis visual.
   def request_auto
     if uploaded_file.size > OCR_AUTO_MAX_SIZE
       @resolved_engine = "vision"
@@ -188,6 +190,7 @@ class ReceiptProcessor
     end
   end
 
+  # Usa Gemini cuando necesitamos interpretar directamente la imagen o PDF.
   def request_gemini
     uri = URI(format(GEMINI_ENDPOINT, model: model))
     uri.query = URI.encode_www_form(key: ENV.fetch("GEMINI_API_KEY"))
@@ -200,6 +203,7 @@ class ReceiptProcessor
     raise ProcessingError.new(:ai_provider_failed, "Gemini devolvió JSON inválido: #{error.message}")
   end
 
+  # Extrae texto con OCR y luego lo estructura con el modelo liviano.
   def request_ocr_groq
     @raw_text ||= extract_text_with_ocr_space
     raise ProcessingError.new(:ocr_failed, "OCR.space no detecto texto suficiente.") if raw_text.blank? || raw_text.length < 20
@@ -395,6 +399,7 @@ class ReceiptProcessor
     }.compact
   end
 
+  # Revisa que la respuesta tenga información suficiente para seguir al formulario.
   def validate_receipt_data!(data)
     validate_purchase_receipt_classification!(data)
 
@@ -424,6 +429,7 @@ class ReceiptProcessor
     raise ProcessingError.new(:not_receipt, rejection_reason)
   end
 
+  # Convierte los productos detectados por IA al formato que espera Rails.
   def item_attributes_from(items)
     Array(items).filter_map.with_index do |item, index|
       next unless item.is_a?(Hash)

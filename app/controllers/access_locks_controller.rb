@@ -3,10 +3,12 @@ class AccessLocksController < ApplicationController
 
   layout "access_lock"
 
+  # Muestra la pantalla para ingresar la clave de acceso.
   def new
     redirect_to access_return_path if !access_lock_enabled? || app_access_unlocked?
   end
 
+  # Valida la clave compartida y habilita la sesión temporal.
   def create
     unless access_lock_enabled?
       redirect_to access_return_path

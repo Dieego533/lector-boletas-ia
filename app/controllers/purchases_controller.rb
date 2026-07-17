@@ -5,6 +5,7 @@ class PurchasesController < ApplicationController
 
   PURCHASES_PER_PAGE = 10
 
+  # Lista las compras guardadas y permite buscar por comercio o RUT.
   def index
     @page = [params[:page].to_i, 1].max
     purchases = Purchase.recent.search_by_merchant(params[:query])
@@ -24,6 +25,7 @@ class PurchasesController < ApplicationController
     @purchase = Purchase.new
   end
 
+  # Procesa el archivo y prepara el formulario para que el usuario revise los datos.
   def preview
     uploaded_receipt = params[:receipt].presence || params[:receipt_camera]
 
@@ -52,6 +54,7 @@ class PurchasesController < ApplicationController
     render :preview
   end
 
+  # Guarda en la base de datos la compra revisada por el usuario.
   def create
     @purchase = Purchase.new(purchase_params)
     @purchase.ai_response = JSON.parse(params.dig(:purchase, :ai_response).presence || "{}")
@@ -79,6 +82,7 @@ class PurchasesController < ApplicationController
     @return_to = safe_return_path(params[:return_to]) || purchase_path(@purchase)
   end
 
+  # Actualiza una compra que ya fue guardada.
   def update
     if @purchase.update(purchase_params)
       redirect_to safe_return_path(params[:return_to]) || @purchase, notice: "Compra guardada correctamente."
@@ -89,6 +93,7 @@ class PurchasesController < ApplicationController
     end
   end
 
+  # Elimina una compra registrada.
   def destroy
     @purchase.destroy!
 
@@ -127,6 +132,7 @@ class PurchasesController < ApplicationController
     params[:ai_engine]
   end
 
+  # Convierte errores internos en mensajes simples para la interfaz.
   def processing_error_message(error_code, detail = nil)
     if error_code&.to_sym == :not_receipt && detail.present?
       detail = user_facing_not_receipt_detail(detail)

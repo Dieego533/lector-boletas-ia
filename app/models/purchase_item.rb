@@ -12,6 +12,7 @@ class PurchaseItem < ApplicationRecord
 
   private
 
+  # Completa valores básicos cuando el usuario agrega una fila manualmente.
   def set_defaults
     self.line_type = "product" if line_type.blank?
     self.quantity = 1 if quantity.blank?
