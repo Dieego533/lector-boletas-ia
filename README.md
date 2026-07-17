@@ -1,8 +1,13 @@
-# Procesador de Boletas IA
+# Procesador de boletas electrónicas, tickets y comprobantes de compra chilenos.
 
 Aplicación web en Ruby on Rails para subir boletas chilenas, vouchers o comprobantes de compra en PDF, JPG o PNG, procesarlos con IA/OCR, revisar los datos detectados y guardar la compra en PostgreSQL.
 
-Demo producción: https://lector-boletas-ia.onrender.com/
+Links:
+
+- Demo producción: https://lector-boletas-ia.onrender.com/
+- Maquetación en Figma: https://www.figma.com/design/yEgnYVwzzXBq6yYweqRSvD/Extractor-de-boletas-IA?node-id=0-1&t=pdqIjuQUgewHjxPn-1
+
+Desplegada en Render con PostgreSQL en Supabase.
 
 La demo puede estar protegida con una clave de acceso compartida, entregada directamente por seguridad.
 
@@ -25,15 +30,15 @@ La demo puede estar protegida con una clave de acceso compartida, entregada dire
 - PostgreSQL
 - Supabase como base de datos en producción
 - Render para despliegue
+- Figma para maquetación
 - Gemini para análisis visual de documentos
 - OCR.space para extracción OCR
 - Groq para estructurar texto extraído por OCR
 
 ## Requisitos
 
-- Ruby compatible con `.ruby-version`
-- Bundler
-- PostgreSQL local o una URL de PostgreSQL externa
+- Ruby 4.0.5
+- PostgreSQL
 - Claves de API para Gemini, Groq y OCR.space
 
 ## Instalación Local
@@ -83,17 +88,13 @@ APP_ACCESS_LOCK_ENABLED=false
 APP_ACCESS_PASSWORD=
 ```
 
-En producción, estas variables están configuradas directamente en Render.
-
-`DATABASE_URL` apunta a PostgreSQL alojado en Supabase.
-
-`AI_ENGINE=auto` es el modo recomendado. En este modo la aplicación decide el método de procesamiento según el archivo. También existen `vision` y `ocr_text` para forzar un método específico.
+Nota: En desarrollo local la aplicación utiliza DATABASE_PASSWORD junto con la configuración de database.yml. En producción, la conexión se realiza mediante DATABASE_URL apuntando a la base de datos de Supabase.
 
 ## Uso
 
 1. Entrar a la aplicación.
 2. Subir una boleta, factura, ticket, voucher o comprobante de compra.
-3. La aplicación procesa el archivo con IA/OCR.
+3. La aplicación procesa el archivo con IA/OCR(Identificado por el sistema o seleccionado por el usuario).
 4. Se muestra un formulario precargado con los datos detectados.
 5. El usuario revisa, corrige o completa los campos faltantes.
 6. La compra se guarda en PostgreSQL.
@@ -108,32 +109,11 @@ Para evitar registros vacíos, al guardar se exige:
 - Fecha de compra.
 - Total mayor que `0`.
 
-Reglas adicionales:
-
-- El IVA es opcional.
-- Si el IVA existe, debe ser mayor o igual a `0`.
-- Si el IVA existe, no puede ser mayor que el total.
-- Los ítems son opcionales.
-- No se valida el formato del RUT para facilitar la demo.
-
-
 ## Cómo se Resolvió el Problema
 
-El procesamiento se divide en dos etapas.
+El procesamiento utiliza dos métodos, priorizando un buen uso de recursos. Cuando el texto puede extraerse correctamente mediante OCR, se procesa con Groq (`llama-3.1-8b-instant`), un modelo más rápido y liviano para estructurar la información. Cuando el documento requiere interpretación visual directa o el OCR no es suficiente, se utiliza Gemini. De esta forma se optimizan las cuotas disponibles y el usuario cuenta con más de una alternativa de procesamiento.
 
-Primero se clasifica el documento para distinguir compras reales de documentos no válidos para el flujo, como transferencias bancarias, reembolsos de seguro, cotizaciones, certificados o documentos informativos.
-
-Después, sólo si el documento corresponde a una compra o voucher de compra, se extraen los datos relevantes:
-
-- comercio
-- RUT
-- número de documento
-- fecha
-- total
-- IVA
-- productos o servicios
-
-La extracción automática no guarda directamente en la base de datos. Siempre pasa por un formulario editable para que el usuario pueda revisar y corregir antes de guardar.
+Antes de extraer los datos, el documento se clasifica para verificar que corresponda a una compra. Si es válido, se obtienen campos como comercio, RUT, número de documento, fecha, total, IVA y productos. Finalmente, la información pasa por un formulario editable para que el usuario pueda revisarla y corregirla antes de guardarla.
 
 ## Prompt de IA
 
@@ -145,16 +125,9 @@ config/prompts/receipt_extraction.txt
 
 Resumen de las instrucciones usadas:
 
-- Devolver exclusivamente JSON válido.
-- Clasificar primero el documento con `document_type`, `is_purchase_receipt`, `confidence` y `rejection_reason`.
-- Usar valores cerrados para `document_type`, como `receipt`, `invoice`, `ticket`, `payment_voucher`, `card_receipt`, `bank_receipt`, `bank_transfer`, `insurance_reimbursement`, `quote`, `unknown`, entre otros.
-- Rechazar documentos que no sean compras, aunque tengan fecha, montos o productos.
-- Extraer datos sólo si `is_purchase_receipt` es `true`.
-- No inventar datos.
-- Usar `null` cuando un dato no esté disponible o no sea confiable.
-- No tratar líneas como `Compra`, `Neto`, `IVA`, `Subtotal` o `Total` como productos.
-- Usar la fecha de compra/emisión o, en vouchers, la fecha de transacción.
-- En vouchers, usar número de operación, autorización, comprobante o transacción como `document_number` si corresponde.
+El prompt obliga al modelo a responder sólo JSON válido. Primero clasifica el documento (`document_type`, `is_purchase_receipt`, `confidence`) y sólo extrae datos si corresponde a una compra o voucher válido. Si el documento no es una compra, devuelve los campos en `null` y explica brevemente el motivo.
+
+También se instruye al modelo a no inventar información, usar `null` cuando un dato no sea confiable, distinguir líneas de resumen como IVA/total/subtotal de productos reales, y elegir la fecha o número de documento según el tipo de comprobante.
 
 Ejemplo breve de salida esperada:
 
@@ -177,20 +150,6 @@ Ejemplo breve de salida esperada:
       "unit_price": 1990,
       "discount_amount": 0,
       "total_price": 1990
-    },
-    {
-      "description": "Leche entera 1L",
-      "quantity": 2,
-      "unit_price": 1250,
-      "discount_amount": 0,
-      "total_price": 2500
-    },
-    {
-      "description": "Cafe instantaneo",
-      "quantity": 1,
-      "unit_price": 4500,
-      "discount_amount": 0,
-      "total_price": 4500
     }
   ]
 }
@@ -214,20 +173,13 @@ Ejemplo de documento rechazado:
 }
 ```
 
-## Producción
-
-La aplicación está desplegada en Render:
-
-```txt
-https://lector-boletas-ia.onrender.com/
-```
-
-La base de datos de producción usa PostgreSQL alojado en Supabase.
-
-Las variables de entorno de producción están configuradas en Render. La clave de acceso de la demo no se publica en el repositorio y se entrega directamente por seguridad.
-
-
 ## Mejoras Futuras
+
+Si tuviera más tiempo, me gustaría llevar la aplicación más allá del almacenamiento de compras y enfocarla también en análisis. Como los datos quedan estructurados en campos como comercio, fecha, total, IVA e ítems, la base queda preparada para construir reportes de gastos, análisis por comercio, filtros por período y exportaciones.
+
+También incorporaría gestión de usuarios para que cada persona o empresa pueda administrar sus propias compras de forma separada y segura. Esto permitiría potenciar el uso real de la aplicación, no sólo como procesador de boletas, sino como una herramienta de consulta y seguimiento.
+
+A nivel técnico, una mejora importante sería mover el procesamiento de OCR e IA a trabajos en segundo plano, especialmente para archivos pesados o cuando los proveedores tengan límites temporales. Además, guardaría el documento original con Active Storage para permitir auditoría, descarga y reprocesamiento futuro.
 
 ## Capturas
 
