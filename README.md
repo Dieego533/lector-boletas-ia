@@ -16,13 +16,12 @@ La demo puede estar protegida con una clave de acceso compartida, entregada dire
 
 - Subida de archivos PDF, JPG y PNG.
 - Procesamiento de boletas, facturas, tickets y vouchers de compra.
-- Clasificación del tipo de documento antes de extraer datos.
+- Dos modos de procesamiento: Gemini para análisis visual y OCR + Groq para extracción de datos.
 - Extracción de comercio, RUT, número de documento, fecha, total, IVA e ítems.
-- Formulario editable antes de guardar.
+- Formulario editable para revisar y corregir los datos antes de guardar.
 - Validaciones para evitar registros vacíos o incompletos.
-- Advertencia no bloqueante si la suma de ítems no coincide con el total.
 - Listado, búsqueda, edición y eliminación de compras.
-- Acceso protegido opcional por clave compartida.
+- Acceso opcional protegido por clave compartida.
 
 ## Stack
 
