@@ -1,11 +1,12 @@
-# Procesador de boletas electrónicas, tickets y comprobantes de compra chilenos.
+# Procesador de boletas IA
 
 Aplicación web en Ruby on Rails para subir boletas chilenas, vouchers o comprobantes de compra en PDF, JPG o PNG, procesarlos con IA/OCR, revisar los datos detectados y guardar la compra en PostgreSQL.
 
-Links:
+## Enlaces
 
-- Demo producción: https://lector-boletas-ia.onrender.com/
-- Maquetación en Figma: https://www.figma.com/design/yEgnYVwzzXBq6yYweqRSvD/Extractor-de-boletas-IA?node-id=0-1&t=pdqIjuQUgewHjxPn-1
+🚀 **[Demo en producción](https://lector-boletas-ia.onrender.com/)**
+
+🎨 **[Maquetación en Figma](https://www.figma.com/design/yEgnYVwzzXBq6yYweqRSvD/Extractor-de-boletas-IA?node-id=0-1&t=pdqIjuQUgewHjxPn-1)**
 
 Desplegada en Render con PostgreSQL en Supabase.
 
