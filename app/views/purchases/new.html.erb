@@ -1,10 +1,13 @@
+<!-- Inicio navegación de regreso -->
 <div class="back-row">
   <%= link_to purchases_path, class: "back-link" do %>
     <span class="material-symbols-outlined">arrow_back</span>
     Volver
   <% end %>
 </div>
+<!-- Fin navegación de regreso -->
 
+<!-- Inicio encabezado de subida -->
 <header class="upload-header">
   <h1>
     <span class="material-symbols-outlined">receipt_long</span>
@@ -12,7 +15,9 @@
   </h1>
   <p>Sube una boleta en formato PDF, JPG o PNG. El tamaño máximo permitido es 10 MB.</p>
 </header>
+<!-- Fin encabezado de subida -->
 
+<!-- Inicio mensajes de estado -->
 <% if notice.present? %>
   <p class="notice"><%= notice %></p>
 <% end %>
@@ -20,9 +25,12 @@
 <% if @processing_error.present? %>
   <p class="alert"><%= @processing_error %></p>
 <% end %>
+<!-- Fin mensajes de estado -->
 
+<!-- Inicio formulario de subida y vista previa -->
 <div class="upload-grid">
   <section class="upload-card">
+    <!-- Inicio formulario que envía la boleta a procesamiento -->
     <%= form_with url: preview_purchases_path, multipart: true, data: { turbo: false, processing_form: true }, class: "upload-form" do %>
       <div class="upload-card-title">
         <span class="material-symbols-outlined">cloud_upload</span>
@@ -79,8 +87,10 @@
         <span data-process-button-label>Procesar boleta</span>
       <% end %>
     <% end %>
+    <!-- Fin formulario que envía la boleta a procesamiento -->
   </section>
 
+  <!-- Inicio vista previa del archivo seleccionado -->
   <section class="preview-card">
     <div class="preview-card-header">
       <div>
@@ -100,8 +110,11 @@
       </div>
     </div>
   </section>
+  <!-- Fin vista previa del archivo seleccionado -->
 </div>
+<!-- Fin formulario de subida y vista previa -->
 
+<!-- Inicio modal de carga mientras se procesa la boleta -->
 <div class="loading-modal" data-loading-modal hidden>
   <div class="loading-modal-card">
     <div class="loading-icon">
@@ -116,7 +129,9 @@
     </div>
   </div>
 </div>
+<!-- Fin modal de carga mientras se procesa la boleta -->
 
+<!-- Script para validar archivo, mostrar preview, comprimir imágenes y limpiar estado con Turbo -->
 <script>
   (() => {
     window.setupUploadForm = window.setupUploadForm || (() => {

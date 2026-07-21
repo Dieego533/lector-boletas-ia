@@ -1,3 +1,4 @@
+<!-- Inicio encabezado del listado -->
 <div class="page-header">
   <div>
     <h1>Compras registradas</h1>
@@ -9,11 +10,15 @@
     Subir boleta
   <% end %>
 </div>
+<!-- Fin encabezado del listado -->
 
+<!-- Inicio mensajes de estado -->
 <% if notice.present? %>
   <p class="notice"><%= notice %></p>
 <% end %>
+<!-- Fin mensajes de estado -->
 
+<!-- Inicio filtros de búsqueda -->
 <section class="panel">
   <%= form_with url: purchases_path, method: :get, class: "filters", data: { turbo_frame: "purchases_table" } do %>
     <div>
@@ -27,7 +32,9 @@
     </div>
   <% end %>
 </section>
+<!-- Fin filtros de búsqueda -->
 
+<!-- Inicio tabla de compras -->
 <%= turbo_frame_tag "purchases_table" do %>
   <% if @purchases.any? %>
     <div class="table-card">
@@ -95,3 +102,4 @@
     <p class="empty-state">No hay compras para los filtros seleccionados.</p>
   <% end %>
 <% end %>
+<!-- Fin tabla de compras -->

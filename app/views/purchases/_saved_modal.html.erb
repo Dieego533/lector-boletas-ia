@@ -1,3 +1,4 @@
+<!-- Inicio modal de compra guardada -->
 <section class="success-overlay" data-success-redirect-url="<%= purchases_path %>">
   <div class="success-modal" role="status" aria-live="polite">
     <div class="success-icon-box">
@@ -20,7 +21,9 @@
     </div>
   </div>
 </section>
+<!-- Fin modal de compra guardada -->
 
+<!-- Script para redirigir después de guardar o cancelar la redirección si el usuario elige una acción -->
 <script>
   window.setupSuccessRedirect = window.setupSuccessRedirect || (() => {
     document.querySelectorAll("[data-success-redirect-url]").forEach((screen) => {

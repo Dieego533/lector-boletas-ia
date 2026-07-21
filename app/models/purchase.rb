@@ -3,6 +3,7 @@ class Purchase < ApplicationRecord
 
   has_many :purchase_items, -> { order(:position, :id) }, dependent: :destroy
 
+  #Guarda los items de la compra
   accepts_nested_attributes_for :purchase_items, allow_destroy: true, reject_if: :reject_purchase_item?
 
   # Campos mínimos para evitar guardar compras vacías.
@@ -13,29 +14,37 @@ class Purchase < ApplicationRecord
   validate :merchant_identifier_must_be_present
   validate :tax_amount_cannot_exceed_total
 
+  # Ordena las compras por fecha de creación
   scope :recent, -> { order(created_at: :desc) }
+
+  # Busca compras por nombre o RUT del comercio
   scope :search_by_merchant, lambda { |query|
     next if query.blank?
 
     where("merchant_name ILIKE ? OR merchant_rut ILIKE ?", "%#{sanitize_sql_like(query)}%", "%#{sanitize_sql_like(query)}%")
   }
 
+
   def ai_model
     ai_response&.dig("model")
   end
+
 
   def ai_engine_label
     engine_label(ai_response&.dig("engine"))
   end
 
+
   def resolved_ai_engine_label
     engine_label(ai_response&.dig("resolved_engine"))
   end
 
+  # Devuelve los datos de la boleta procesada
   def ai_data
     ai_response&.dig("data") || ai_response
   end
 
+  # Convierte valores internos del motor de IA en etiquetas simples
   def engine_label(engine)
     {
       "auto" => "Automático",
@@ -44,10 +53,12 @@ class Purchase < ApplicationRecord
     }[engine]
   end
 
+  #Calcula el total de los items de la compra
   def items_total_amount
     purchase_items.reject(&:marked_for_destruction?).filter_map(&:total_price).sum(0.to_d)
   end
 
+  #Calcula la diferencia entre el total de la compra y el total de los items
   def items_total_difference
     return 0.to_d if total_amount.blank? || items_total_amount.zero?
 
@@ -64,6 +75,7 @@ class Purchase < ApplicationRecord
 
   private
 
+  # No se pueden guardar items sin descripción
   def reject_purchase_item?(attributes)
     ActiveModel::Type::Boolean.new.cast(attributes["_destroy"]) || attributes["description"].blank?
   end

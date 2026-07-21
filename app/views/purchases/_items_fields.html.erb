@@ -1,3 +1,4 @@
+<!-- Inicio tabla editable de productos -->
 <div class="editable-items-table" data-items-editor data-item-param-prefix="<%= form.object_name %>[purchase_items_attributes]">
   <div class="editable-items-row header">
     <span>Descripción</span>
@@ -8,6 +9,7 @@
     <span></span>
   </div>
 
+  <!-- Inicio filas existentes de productos -->
   <div data-items-rows>
     <%= form.fields_for :purchase_items do |item_form| %>
       <div class="editable-items-row" data-item-row>
@@ -47,9 +49,11 @@
       </div>
     <% end %>
   </div>
+  <!-- Fin filas existentes de productos -->
 
   <div class="editable-items-empty" data-items-empty <%= "hidden" if form.object.purchase_items.any? %>>No hay productos en el desglose. Puedes agregar filas manualmente.</div>
 
+  <!-- Plantilla usada para agregar nuevos productos manualmente -->
   <template data-item-template>
     <div class="editable-items-row" data-item-row>
       <input type="hidden" name="<%= form.object_name %>[purchase_items_attributes][NEW_RECORD][line_type]" value="product">
@@ -87,7 +91,9 @@
     </div>
   </template>
 </div>
+<!-- Fin tabla editable de productos -->
 
+<!-- Script para agregar, quitar y reordenar filas de productos -->
 <script>
   (() => {
     window.setupItemsEditor = window.setupItemsEditor || (() => {

@@ -1,10 +1,13 @@
+<!-- Inicio encabezado de revisión -->
 <header class="review-header">
   <div>
     <h1>Revisa la información antes de guardar</h1>
     <p>Los campos son editables. La compra sólo se guardará cuando presiones Guardar compra.</p>
   </div>
 </header>
+<!-- Fin encabezado de revisión -->
 
+<!-- Inicio mensajes de estado -->
 <% if notice.present? %>
   <p class="notice"><%= notice %></p>
 <% end %>
@@ -12,8 +15,11 @@
 <% if @processing_error.present? %>
   <p class="alert"><%= @processing_error %></p>
 <% end %>
+<!-- Fin mensajes de estado -->
 
+<!-- Inicio revisión de boleta y formulario -->
 <div class="review-layout">
+  <!-- Inicio boleta original -->
   <section class="review-receipt-card">
     <div class="review-card-header">
       <div>
@@ -51,7 +57,9 @@
       <% end %>
     </div>
   </section>
+  <!-- Fin boleta original -->
 
+  <!-- Inicio formulario con datos extraídos -->
   <section class="review-form-card">
     <% field_error_class = ->(field) { "field-error-input" if @purchase.errors[field].any? } %>
 
@@ -121,10 +129,14 @@
       </div>
     <% end %>
   </section>
+  <!-- Fin formulario con datos extraídos -->
 </div>
+<!-- Fin revisión de boleta y formulario -->
 
+<!-- Contenedor donde Turbo inserta el modal de éxito al guardar -->
 <div id="success_modal_root"></div>
 
+<!-- Script para lupa de la boleta y activación del modal de éxito -->
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll("[data-receipt-zoom]").forEach((frame) => {

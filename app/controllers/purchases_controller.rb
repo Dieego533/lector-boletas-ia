@@ -1,11 +1,12 @@
 require "base64"
 
 class PurchasesController < ApplicationController
+  #buscamos el id en la base de datos antes de cualquiera de las acciones que lo requieran
   before_action :set_purchase, only: %i[show saved edit update destroy]
 
   PURCHASES_PER_PAGE = 10
 
-  # Lista las compras guardadas y permite buscar por comercio o RUT.
+  # Muestra el listado principal de compras.
   def index
     @page = [params[:page].to_i, 1].max
     purchases = Purchase.recent.search_by_merchant(params[:query])
@@ -25,7 +26,7 @@ class PurchasesController < ApplicationController
     @purchase = Purchase.new
   end
 
-  # Procesa el archivo y prepara el formulario para que el usuario revise los datos.
+  # Procesa el archivo, pero todavía no guarda nada.
   def preview
     uploaded_receipt = params[:receipt].presence || params[:receipt_camera]
 
@@ -36,6 +37,7 @@ class PurchasesController < ApplicationController
       return
     end
 
+    # Se extraen los datos con IA/OCR
     result = ReceiptProcessor.new(uploaded_receipt, engine: ai_engine_param).call
 
     unless result.success?
@@ -54,7 +56,7 @@ class PurchasesController < ApplicationController
     render :preview
   end
 
-  # Guarda en la base de datos la compra revisada por el usuario.
+  # Guarda la compra después de que el usuario revisa el formulario.
   def create
     @purchase = Purchase.new(purchase_params)
     @purchase.ai_response = JSON.parse(params.dig(:purchase, :ai_response).presence || "{}")
@@ -82,7 +84,7 @@ class PurchasesController < ApplicationController
     @return_to = safe_return_path(params[:return_to]) || purchase_path(@purchase)
   end
 
-  # Actualiza una compra que ya fue guardada.
+  # Guarda cambios sobre una compra existente.
   def update
     if @purchase.update(purchase_params)
       redirect_to safe_return_path(params[:return_to]) || @purchase, notice: "Compra guardada correctamente."
@@ -93,7 +95,7 @@ class PurchasesController < ApplicationController
     end
   end
 
-  # Elimina una compra registrada.
+  # Elimina la compra y sus productos asociados.
   def destroy
     @purchase.destroy!
 
@@ -106,6 +108,7 @@ class PurchasesController < ApplicationController
     @purchase = Purchase.find(params[:id])
   end
 
+  # Define qué datos del formulario se pueden guardar.
   def purchase_params
     attributes = params.require(:purchase).permit(
       :merchant_name,
@@ -132,7 +135,7 @@ class PurchasesController < ApplicationController
     params[:ai_engine]
   end
 
-  # Convierte errores internos en mensajes simples para la interfaz.
+  # Traduce errores técnicos a mensajes entendibles para el usuario.
   def processing_error_message(error_code, detail = nil)
     if error_code&.to_sym == :not_receipt && detail.present?
       detail = user_facing_not_receipt_detail(detail)
@@ -185,6 +188,7 @@ class PurchasesController < ApplicationController
     nil
   end
 
+  # Prepara una vista previa pequeña de la boleta original.
   def preview_file(uploaded_receipt)
     return unless uploaded_receipt.content_type.in?(%w[image/jpeg image/png application/pdf])
     return if uploaded_receipt.size > 3.megabytes

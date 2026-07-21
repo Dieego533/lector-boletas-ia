@@ -1,10 +1,13 @@
+<!-- Inicio navegación de regreso -->
 <div class="back-row">
   <%= link_to purchases_path, class: "back-link" do %>
     <span class="material-symbols-outlined">arrow_back</span>
     Volver
   <% end %>
 </div>
+<!-- Fin navegación de regreso -->
 
+<!-- Inicio encabezado del detalle -->
 <div class="purchase-detail-header">
   <div>
     <h1>
@@ -26,12 +29,17 @@
     <% end %>
   </div>
 </div>
+<!-- Fin encabezado del detalle -->
 
+<!-- Inicio mensajes de estado -->
 <% if notice.present? %>
   <p class="notice"><%= notice %></p>
 <% end %>
+<!-- Fin mensajes de estado -->
 
+<!-- Inicio detalle de compra -->
 <div class="purchase-detail-layout">
+  <!-- Inicio información del procesamiento IA -->
   <section class="detail-card ai-card">
     <div class="detail-card-title">
       <div>
@@ -100,7 +108,9 @@
       <% end %>
     </div>
   </section>
+  <!-- Fin información del procesamiento IA -->
 
+  <!-- Inicio datos guardados de la compra -->
   <section class="detail-card data-card">
     <div class="detail-card-title simple">
       <div>
@@ -141,6 +151,7 @@
       </div>
     </div>
 
+    <!-- Inicio desglose de productos -->
     <div class="product-breakdown">
       <div class="product-breakdown-title">
         <span class="material-symbols-outlined">list_alt</span>
@@ -193,5 +204,8 @@
         </div>
       <% end %>
     </div>
+    <!-- Fin desglose de productos -->
   </section>
+  <!-- Fin datos guardados de la compra -->
 </div>
+<!-- Fin detalle de compra -->

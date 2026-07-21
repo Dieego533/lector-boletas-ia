@@ -1,3 +1,4 @@
+<!-- Inicio errores de validación -->
 <% if purchase.errors.any? %>
   <div class="form-errors">
     <h2>No se pudo guardar</h2>
@@ -8,12 +9,15 @@
     </ul>
   </div>
 <% end %>
+<!-- Fin errores de validación -->
 
 <% field_error_class = ->(field) { "field-error-input" if purchase.errors[field].any? } %>
 
+<!-- Inicio formulario de compra -->
 <%= form_with model: purchase, class: "purchase-edit-form" do |form| %>
   <%= hidden_field_tag :return_to, local_assigns[:return_to] if local_assigns[:return_to].present? %>
 
+  <!-- Inicio datos principales -->
   <div class="purchase-edit-fields">
     <div class="field-full">
       <%= form.label :merchant_name, "Comercio o RUT comercio *" %>
@@ -45,7 +49,9 @@
       <%= form.number_field :tax_amount, step: 1, min: 0, class: field_error_class.call(:tax_amount), value: purchase.tax_amount.present? ? purchase.tax_amount.to_i : purchase.tax_amount %>
     </div>
   </div>
+  <!-- Fin datos principales -->
 
+  <!-- Inicio desglose de productos -->
   <div class="items-review edit-items-review">
     <div class="items-review-header">
       <div>
@@ -61,9 +67,13 @@
     <%= render "purchases/items_total_warning", purchase: purchase %>
     <%= render "purchases/items_fields", form: form %>
   </div>
+  <!-- Fin desglose de productos -->
 
+  <!-- Inicio acciones del formulario -->
   <div class="purchase-edit-actions">
     <%= link_to "Cancelar", local_assigns.fetch(:cancel_path, purchases_path), class: "button button-secondary" %>
     <%= form.submit submit_text, class: "save-review-button" %>
   </div>
+  <!-- Fin acciones del formulario -->
 <% end %>
+<!-- Fin formulario de compra -->

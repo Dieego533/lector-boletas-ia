@@ -9,6 +9,7 @@ class ReceiptProcessor
   class ProcessingError < StandardError
     attr_reader :code
 
+    # Guarda un código simple para identificar el tipo de error.
     def initialize(code, message)
       @code = code
       super(message)
@@ -17,9 +18,11 @@ class ReceiptProcessor
 
   Result = Struct.new(:success?, :attributes, :raw_text, :ai_response, :processing_error, :error_code, keyword_init: true)
 
+
   GEMINI_MODEL = "gemini-3.1-flash-lite".freeze
   GROQ_TEXT_MODEL = "llama-3.1-8b-instant".freeze
   OCR_AUTO_MAX_SIZE = 1.5.megabytes
+
 
   ENGINES = {
     "auto" => {
@@ -39,15 +42,19 @@ class ReceiptProcessor
     }
   }.freeze
 
+  # Tipos de documento que la IA puede devolver en su clasificación.
   DOCUMENT_TYPES = %w[
     receipt invoice ticket payment_voucher card_receipt bank_receipt bank_transfer bank_deposit
     insurance_reimbursement quote medical_order account_statement certificate benefits_document unknown
   ].freeze
+
+  # Vouchers que se aceptan aunque no son boletas como tal.
   PURCHASE_SUPPORT_DOCUMENT_TYPES = %w[payment_voucher card_receipt bank_receipt].freeze
 
   GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/%<model>s:generateContent".freeze
   GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions".freeze
   OCR_SPACE_ENDPOINT = "https://api.ocr.space/parse/image".freeze
+
   PROMPT_PATH = Rails.root.join("config/prompts/receipt_extraction.txt").freeze
 
   def self.engine_options
@@ -117,10 +124,12 @@ class ReceiptProcessor
     raise ProcessingError.new(:file_too_large, "El archivo debe pesar máximo 10 MB.") if uploaded_file.size > 10.megabytes
   end
 
+  # Busca la configuración del método elegido.
   def engine_config
     ENGINES.fetch(engine) { raise ProcessingError.new(:unsupported_engine, "Motor IA no permitido: #{engine}") }
   end
 
+  # Devuelve el método finalmente usado cuando el modo es automático.
   def resolved_engine
     return @resolved_engine if defined?(@resolved_engine)
     return engine unless engine == "auto"
@@ -158,9 +167,11 @@ class ReceiptProcessor
     nil
   end
 
+  # Ejecuta el método elegido: automático, visión o OCR + texto.
   def request_ai
     return request_auto if engine == "auto"
 
+    # Si el usuario eligió un método manual, se respeta esa opción.
     case provider
     when "gemini"
       request_gemini
@@ -178,6 +189,7 @@ class ReceiptProcessor
       return request_gemini
     end
 
+    # Primero intenta leer texto para usar el método más liviano.
     @raw_text = extract_text_with_ocr_space
     raise ProcessingError.new(:ocr_failed, "OCR.space no detecto texto suficiente.") if raw_text.blank? || raw_text.length < 20
 
@@ -190,11 +202,11 @@ class ReceiptProcessor
     end
   end
 
-  # Usa Gemini cuando necesitamos interpretar directamente la imagen o PDF.
   def request_gemini
     uri = URI(format(GEMINI_ENDPOINT, model: model))
     uri.query = URI.encode_www_form(key: ENV.fetch("GEMINI_API_KEY"))
 
+    # Llamada a Gemini para analizar directamente la imagen o PDF.
     response = post_json(uri, gemini_payload)
     raise_ai_provider_error("Gemini", response) unless response.is_a?(Net::HTTPSuccess)
 
@@ -218,6 +230,7 @@ class ReceiptProcessor
     request["Content-Type"] = "application/json"
     request.body = JSON.generate(groq_text_payload(text))
 
+    # Llamada a Groq para transformar el texto OCR en datos estructurados.
     response = perform_request(uri, request)
     raise_ai_provider_error("Groq", response) unless response.is_a?(Net::HTTPSuccess)
 
@@ -226,6 +239,7 @@ class ReceiptProcessor
     raise ProcessingError.new(:ai_provider_failed, "Groq devolvió JSON inválido: #{error.message}")
   end
 
+  # Detecta si el texto parece complejo y conviene usar análisis visual.
   def complex_receipt_text?(text)
     normalized_text = I18n.transliterate(text.to_s).downcase
     lines = normalized_text.lines.map(&:strip).reject(&:blank?)
@@ -246,6 +260,7 @@ class ReceiptProcessor
     numeric_heavy_lines >= 2 || long_code_lines >= 2
   end
 
+  # Extrae texto del archivo usando OCR.space.
   def extract_text_with_ocr_space
     uri = URI(OCR_SPACE_ENDPOINT)
     request = Net::HTTP::Post.new(uri)
@@ -262,6 +277,7 @@ class ReceiptProcessor
       "multipart/form-data"
     )
 
+    # Llamada al servicio OCR para obtener texto desde el archivo.
     response = perform_request(uri, request)
     raise ProcessingError.new(:ocr_failed, "OCR.space respondió HTTP #{response.code}: #{response.body}") unless response.is_a?(Net::HTTPSuccess)
 
@@ -273,6 +289,7 @@ class ReceiptProcessor
     raise ProcessingError.new(:ocr_failed, "OCR.space devolvió JSON inválido: #{error.message}")
   end
 
+  # Envía un request JSON a un servicio externo.
   def post_json(uri, payload)
     request = Net::HTTP::Post.new(uri)
     request["Content-Type"] = "application/json"
@@ -281,6 +298,7 @@ class ReceiptProcessor
     perform_request(uri, request)
   end
 
+  # Ejecuta la llamada HTTP con SSL y timeout.
   def perform_request(uri, request)
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
@@ -288,6 +306,7 @@ class ReceiptProcessor
     http.request(request)
   end
 
+  # Convierte errores HTTP del proveedor en errores internos de la app.
   def raise_ai_provider_error(provider_label, response)
     message = "#{provider_label} respondió HTTP #{response.code}: #{response.body}"
     error_code = response.code.to_i == 429 ? :rate_limited : :ai_provider_failed
@@ -295,6 +314,7 @@ class ReceiptProcessor
     raise ProcessingError.new(error_code, message)
   end
 
+  # Arma el cuerpo que se envía a Gemini junto con el archivo.
   def gemini_payload
     {
       contents: [
@@ -318,6 +338,7 @@ class ReceiptProcessor
     }
   end
 
+  # Arma el cuerpo que se envía a Groq con el texto extraído por OCR.
   def groq_text_payload(text)
     {
       model: model,
@@ -333,11 +354,13 @@ class ReceiptProcessor
   end
 
   def prompt
+    # Instrucciones que guían a la IA para clasificar y extraer datos.
     File.read(PROMPT_PATH)
   rescue Errno::ENOENT => error
     raise ProcessingError.new(:prompt_unavailable, "No se encontró el archivo de instrucciones: #{error.message}")
   end
 
+  # Convierte la respuesta del proveedor en datos JSON utilizables.
   def parse_response(response)
     text = if provider == "gemini"
       response.dig("candidates", 0, "content", "parts", 0, "text")
@@ -352,12 +375,14 @@ class ReceiptProcessor
     raise ProcessingError.new(:invalid_ai_response, "#{provider_name} devolvió JSON inválido: #{error.message}")
   end
 
+  # Normaliza datos devueltos por la IA antes de usarlos.
   def normalize_extracted_data(data)
     return data unless data.is_a?(Hash)
 
     data.merge("document_type" => normalize_document_type(data["document_type"]))
   end
 
+  # Asegura que el tipo de documento sea uno de los permitidos.
   def normalize_document_type(document_type)
     normalized_type = document_type.to_s.parameterize(separator: "_")
     return normalized_type if DOCUMENT_TYPES.include?(normalized_type)
@@ -365,10 +390,12 @@ class ReceiptProcessor
     "unknown"
   end
 
+  # Limpia bloques markdown si el proveedor envolvió el JSON en ```.
   def clean_json_text(text)
     text.strip.gsub(/\A```(?:json)?\s*/i, "").gsub(/\s*```\z/, "")
   end
 
+  # Lee el archivo subido y lo deja disponible para reutilizarlo.
   def file_data
     @file_data ||= begin
       uploaded_file.rewind if uploaded_file.respond_to?(:rewind)
@@ -378,14 +405,17 @@ class ReceiptProcessor
     end
   end
 
+  # Convierte el archivo a base64 para enviarlo a Gemini.
   def encoded_file
     @encoded_file ||= Base64.strict_encode64(file_data)
   end
 
+  # Devuelve el tipo de archivo subido.
   def content_type
     uploaded_file.content_type
   end
 
+  # Convierte los datos extraídos al formato del modelo Purchase.
   def attributes_from(data)
     {
       merchant_name: data["merchant_name"],
@@ -403,6 +433,7 @@ class ReceiptProcessor
   def validate_receipt_data!(data)
     validate_purchase_receipt_classification!(data)
 
+    # Evita avanzar si la respuesta no trae datos mínimos de compra.
     total_amount = decimal_or_nil(data["total_amount"])
     tax_amount = decimal_or_nil(data["tax_amount"])
     items = Array(data["items"]).select { |item| item.is_a?(Hash) && item["description"].to_s.squish.present? }
@@ -419,6 +450,7 @@ class ReceiptProcessor
     raise ProcessingError.new(:not_receipt, "El archivo no contiene datos suficientes de una compra.")
   end
 
+  # Rechaza documentos que la IA clasificó como no compra.
   def validate_purchase_receipt_classification!(data)
     return if ActiveModel::Type::Boolean.new.cast(data["is_purchase_receipt"])
 
@@ -454,16 +486,19 @@ class ReceiptProcessor
     end
   end
 
+  # Calcula el total de un producto cuando la IA no lo entregó.
   def calculated_total_price(quantity, unit_price, discount_amount)
     return if unit_price.blank?
 
     (unit_price * quantity) - discount_amount
   end
 
+  # Devuelve un decimal o un valor por defecto.
   def decimal_or_default(value, default)
     decimal_or_nil(value) || default
   end
 
+  # Convierte textos de montos a decimal de forma segura.
   def decimal_or_nil(value)
     return if value.blank?
 
@@ -481,6 +516,7 @@ class ReceiptProcessor
     nil
   end
 
+  # Devuelve un nombre simple del proveedor usado.
   def provider_name
     return "Gemini" if provider == "gemini"
     return "OCR.space + Groq" if provider == "ocr_groq"
@@ -488,12 +524,14 @@ class ReceiptProcessor
     "IA"
   end
 
+  # Obtiene el código de error para comunicarlo al controller.
   def error_code_for(error)
     return error.code if error.respond_to?(:code)
 
     :unknown_error
   end
 
+  # Guarda detalles técnicos del error en logs.
   def log_processing_error(error)
     Rails.logger.error(
       "[ReceiptProcessor] " \
@@ -511,6 +549,7 @@ class ReceiptProcessor
     )
   end
 
+  # Devuelve el tipo de archivo sin romper si no hay archivo válido.
   def content_type_safe
     content_type
   rescue StandardError

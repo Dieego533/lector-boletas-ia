@@ -1,3 +1,4 @@
+<!-- Inicio navegación de regreso -->
 <div class="back-row">
   <% return_path = @return_to || purchase_path(@purchase) %>
 
@@ -6,12 +7,16 @@
     Volver
   <% end %>
 </div>
+<!-- Fin navegación de regreso -->
 
+<!-- Inicio encabezado de edición -->
 <header class="edit-purchase-header">
   <h1>Editar compra</h1>
   <p>Corrige los datos guardados de la boleta.</p>
 </header>
+<!-- Fin encabezado de edición -->
 
+<!-- Inicio mensajes de estado -->
 <% if notice.present? %>
   <p class="notice"><%= notice %></p>
 <% end %>
@@ -19,7 +24,9 @@
 <% if @purchase.processing_error.present? %>
   <p class="alert">No se pudo procesar la boleta. Intenta nuevamente con otro método.</p>
 <% end %>
+<!-- Fin mensajes de estado -->
 
+<!-- Inicio formulario de edición -->
 <div class="edit-purchase-shell">
   <section class="edit-purchase-card">
     <div class="edit-purchase-card-header">
@@ -30,3 +37,4 @@
     <%= render "purchases/form", purchase: @purchase, submit_text: "Guardar compra", cancel_path: return_path, return_to: return_path %>
   </section>
 </div>
+<!-- Fin formulario de edición -->
